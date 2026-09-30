@@ -96,7 +96,7 @@ bairro
 
 **Saída recebida**
 
-Arquivo: `docs/testes/ia/saida-rodada-1.md`
+Arquivo: `saida-rodada-1.md`
 
 > **Nota:** o arquivo contém a saída da rodada 1 reexecutada em 30/09/2026 com ChatGPT, em chat novo e com o mesmo prompt, pois a conversa original não estava disponível. As observações abaixo foram feitas sobre essa saída reexecutada.
 
@@ -218,7 +218,7 @@ Observações: CT-AUT-11 é suposição porque o produto usa cookie HttpOnly e t
 
 ### 4.6 Casos de teste
 
-Arquivo: `docs/testes/ia/saida-rodada-2.md`
+Arquivo: `saida-rodada-2.md`
 
 > **Nota:** o arquivo contém a saída da rodada 2 reexecutada em 30/09/2026 com ChatGPT, em chat novo (66 casos, com matrizes de alocação, derivação e rastreabilidade e lista de lacunas), pois a conversa original não estava disponível. As tabelas 4.3 a 4.5 deste plano são o recorte adaptado ao SOS Cidade.
 >

@@ -6,7 +6,7 @@
 | --- | --- |
 | **Equipe / Squad** | Equipe 8 |
 | **Produto / SUT** | SOS Cidade |
-| **Integrantes** | João Pedro do Monte Souza; Pedro Henrique Rennil da Silva Souza; Gabriel Cavalcante Barros de Oliveira; Alan Vitor Ferreira Sobral; Drielly Santiago dos Santos; Kayky Dias de Oliveira; Pedro Soares Rangel; Glauco Santos |
+| **Integrantes** | João Pedro do Monte Souza; Pedro Henrique Rennil da Silva Souza; Gabriel Cavalcante Barros de Oliveira; Alan Vitor Ferreira Sobral; Drielly Santiago dos Santos; Kayky Dias de Oliveira; Pedro Soares Rangel; Glauco Santos; Marcos Antônio Taveira Fraga; João Guillherme Aires Chagas |
 | **Data** | 30/09/2026 (versão 1) |
 
 ---
@@ -98,7 +98,7 @@ bairro
 
 Arquivo: `docs/testes/ia/saida-rodada-1.md`
 
-> **Nota:** o arquivo contém a saída da rodada 1 reexecutada em 30/09/2026 com Claude, em chat novo e com o mesmo prompt, pois a conversa original não estava disponível. As observações abaixo foram feitas sobre essa saída reexecutada.
+> **Nota:** o arquivo contém a saída da rodada 1 reexecutada em 30/09/2026 com ChatGPT, em chat novo e com o mesmo prompt, pois a conversa original não estava disponível. As observações abaixo foram feitas sobre essa saída reexecutada.
 
 **Três perguntas sobre a saída**
 
@@ -220,7 +220,7 @@ Observações: CT-AUT-11 é suposição porque o produto usa cookie HttpOnly e t
 
 Arquivo: `docs/testes/ia/saida-rodada-2.md`
 
-> **Nota:** o arquivo contém a saída da rodada 2 reexecutada em 30/09/2026 com Claude, em chat novo (66 casos, com matrizes de alocação, derivação e rastreabilidade e lista de lacunas), pois a conversa original não estava disponível. As tabelas 4.3 a 4.5 deste plano são o recorte adaptado ao SOS Cidade.
+> **Nota:** o arquivo contém a saída da rodada 2 reexecutada em 30/09/2026 com ChatGPT, em chat novo (66 casos, com matrizes de alocação, derivação e rastreabilidade e lista de lacunas), pois a conversa original não estava disponível. As tabelas 4.3 a 4.5 deste plano são o recorte adaptado ao SOS Cidade.
 >
 > **Os 66 casos são a saída bruta da IA e não um compromisso de execução.** Parte deles pode tratar de funcionalidades que o SOS Cidade não tem (por exemplo, notificações e administração de contas de gestor) ou que estão fora do escopo da seção 1. O compromisso deste plano é o recorte das seções 4.3 a 4.5 e os casos selecionados nas seções 5 e 6.
 

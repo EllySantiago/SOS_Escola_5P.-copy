@@ -58,7 +58,7 @@ export class DenunciaService {
     const denuncia = await this.denunciaRepository.create({
       tipoDenuncia: data.tipoDenuncia,
       identificacao: data.identificacao,
-      nomeDenunciante: data.nomeDenunciante || (data.identificacao ? data.userEmail : 'Anônimo'),
+      nomeDenunciante: encrypt(data.identificacao ? (data.nomeDenunciante || data.userEmail) : 'Anônimo'),
       user: data.userId ? { connect: { id: data.userId } } : undefined,
       bairroOcorrencia: data.bairroOcorrencia,
       descricaoOcorrencia: data.descricaoOcorrencia,

@@ -145,6 +145,10 @@ export default function NovaDenunciaScreen() {
       }
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setCoords({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      const addresses = await Location.reverseGeocodeAsync(position.coords);
+      const address = addresses[0];
+      const bairroEncontrado = address?.district || address?.subregion || address?.city;
+      if (bairroEncontrado) setBairro(bairroEncontrado);
       Toast.show({ type: 'success', text1: 'Localização capturada' });
     } catch {
       Toast.show({ type: 'error', text1: 'Não foi possível obter sua localização' });
@@ -157,17 +161,13 @@ export default function NovaDenunciaScreen() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const descricaoFinal = coords
-        ? `${descricao.trim()}\n\n[Localização GPS: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}]`
-        : descricao.trim();
-
       const result = await createDenuncia({
         tipoDenuncia,
         identificacao,
         nomeDenunciante: identificacao ? (user?.name || 'Anônimo') : 'Anônimo',
         userId: user?.id,
         bairroOcorrencia: bairro.trim(),
-        descricaoOcorrencia: descricaoFinal,
+        descricaoOcorrencia: descricao.trim(),
         dataOcorrencia: data,
         protocolo: '',
         situacao: SITUACAO_INICIAL,

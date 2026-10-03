@@ -100,7 +100,7 @@ export interface Denuncia {
 export const denunciasAPI = {
   list: async (page = 1, limit = 50) => {
     return apiCall<PaginatedResponse<Denuncia>>(
-      `/denuncias?_page=${page}&_limit=${limit}&_meta=1`
+      `/denuncias/minhas?_page=${page}&_limit=${limit}&_meta=1`
     );
   },
 

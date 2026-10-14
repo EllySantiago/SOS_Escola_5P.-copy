@@ -74,7 +74,11 @@ test.describe.serial('Jornada do Cidadão: cadastro, login e registro de denúnc
 
     // ir para o formulário de nova denúncia
     await page.goto('/nova-denuncia');
-    await expect(page.getByRole('heading', { name: 'Nova Denúncia' })).toBeVisible();
+    // O cabeçalho do site repete o título num h1. O layout tem dois <main> aninhados;
+    // o de dentro (o último) só tem o conteúdo da página.
+    await expect(
+      page.getByRole('main').last().getByRole('heading', { name: 'Nova Denúncia', exact: true }),
+    ).toBeVisible();
 
     // Tipo do Problema (select estilo shadcn/Radix)
     await page.getByRole('combobox', { name: /Tipo do Problema/i }).click();

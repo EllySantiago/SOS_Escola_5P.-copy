@@ -1,4 +1,5 @@
 import { Text, TouchableOpacity, StyleSheet } from 'react-native';
+import type { ReactNode } from 'react';
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { colors } from '@/constants/theme';
 
@@ -6,6 +7,8 @@ interface ChipProps {
   label: string;
   selected?: boolean;
   onPress?: () => void;
+  accessibilityLabel?: string;
+  trailingElement?: ReactNode;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
@@ -14,6 +17,8 @@ export default function Chip({
   label,
   selected = false,
   onPress,
+  accessibilityLabel,
+  trailingElement,
   style,
   textStyle,
 }: ChipProps) {
@@ -23,9 +28,11 @@ export default function Chip({
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
     >
       <Text style={[styles.label, selected && styles.selectedLabel, textStyle]}>{label}</Text>
+      {trailingElement}
     </TouchableOpacity>
   );
 }

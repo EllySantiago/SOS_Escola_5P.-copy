@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { authAPI } from '@/services/authService';
+import { AUTH_TOKEN_KEY, USER_ROLE_KEY } from '@/constants/config';
 import type { AuthUser } from '@/types';
 
 export type { AuthUser } from '@/types';
@@ -43,8 +44,8 @@ export const useAuthStore = create<AuthState>()(
             };
 
 
-            await SecureStore.setItemAsync('authToken', response.data.token);
-            await SecureStore.setItemAsync('userRole', mappedRole);
+            await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.data.token);
+            await SecureStore.setItemAsync(USER_ROLE_KEY, mappedRole);
 
             set({ user: userData, isAuthenticated: true, isLoading: false });
             return { success: true, role: mappedRole };
@@ -65,8 +66,8 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout API error:', error);
         }
-        await SecureStore.deleteItemAsync('authToken');
-        await SecureStore.deleteItemAsync('userRole');
+        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+        await SecureStore.deleteItemAsync(USER_ROLE_KEY);
         set({ user: null, isAuthenticated: false });
       },
     }),

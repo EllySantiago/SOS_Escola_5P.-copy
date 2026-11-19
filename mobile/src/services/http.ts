@@ -1,17 +1,19 @@
 import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL, AUTH_TOKEN_KEY } from '@/constants/config';
 import type { ApiResponse } from '@/types';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+type ApiRequestOptions = RequestInit & { authenticated?: boolean };
 
-export async function apiCall<T>(
+export async function apiRequest<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: ApiRequestOptions
 ): Promise<ApiResponse<T>> {
   try {
-    const token = await SecureStore.getItemAsync('authToken');
+    const { authenticated = true, ...requestOptions } = options ?? {};
+    const token = authenticated ? await SecureStore.getItemAsync(AUTH_TOKEN_KEY) : null;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string>),
+      ...(requestOptions.headers as Record<string, string>),
     };
 
     if (token) {
@@ -19,7 +21,7 @@ export async function apiCall<T>(
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
+      ...requestOptions,
       headers,
     });
 

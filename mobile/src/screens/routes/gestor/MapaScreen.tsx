@@ -22,6 +22,7 @@ import {
   SITUACAO_CONFIG,
   TIPOS_DENUNCIA,
 } from '@/constants';
+import { formatDate } from '@/utils/formatDate';
 
 
 function WebMapFallback({ denuncias, onSelect }: { denuncias: Denuncia[]; onSelect: (d: Denuncia) => void }) {
@@ -251,7 +252,7 @@ export default function MapaScreen() {
                 </View>
                 <View style={styles.metaItem}>
                   <Ionicons name="calendar-outline" size={14} color="#9ca3af" />
-                  <Text style={styles.metaText}>{new Date(selectedDenuncia.dataOcorrencia).toLocaleDateString('pt-BR')}</Text>
+                  <Text style={styles.metaText}>{formatDate(selectedDenuncia.dataOcorrencia)}</Text>
                 </View>
               </View>
 

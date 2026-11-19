@@ -28,21 +28,21 @@ export default function DenuncianteLayout() {
         name="home"
         options={{
           title: 'Início',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={typeof color === 'string' ? color : '#1669BB'} />,
         }}
       />
       <Tabs.Screen
         name="nova-denuncia"
         options={{
           title: 'Denunciar',
-          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle-outline" size={size} color={typeof color === 'string' ? color : '#1669BB'} />,
         }}
       />
       <Tabs.Screen
         name="minhas-denuncias"
         options={{
           title: 'Minhas',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" size={size} color={typeof color === 'string' ? color : '#1669BB'} />,
         }}
       />
       <Tabs.Screen

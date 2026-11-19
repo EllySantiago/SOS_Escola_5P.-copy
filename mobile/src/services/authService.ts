@@ -1,5 +1,5 @@
-import { apiRequest, setToken, clearToken } from './api';
-import { apiCall } from '@/services/http';
+import { setToken, clearToken } from './tokenStorage';
+import { apiRequest } from './http';
 import type { AuthLoginResponse, AuthLogoutResponse } from '@/types';
 
 /**
@@ -8,11 +8,15 @@ import type { AuthLoginResponse, AuthLogoutResponse } from '@/types';
  */
 export const AuthService = {
   async login(email: string, password: string): Promise<AuthLoginResponse> {
-    const session = await apiRequest<AuthLoginResponse>('/auth/login', {
+    const response = await apiRequest<AuthLoginResponse>('/auth/login', {
       method: 'POST',
-      body: { email, password },
-      authenticated: false, // ainda não tem token nessa etapa
+      body: JSON.stringify({ email, password }),
+      authenticated: false,
     });
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Login falhou');
+    }
+    const session = response.data;
     await setToken(session.token);
     return session;
   },
@@ -23,12 +27,12 @@ export const AuthService = {
 };
 
 export const authAPI = {
-  login: async (email: string, password: string) => apiCall<AuthLoginResponse>('/auth/login', {
+  login: async (email: string, password: string) => apiRequest<AuthLoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   }),
 
-  logout: async () => apiCall<AuthLogoutResponse>('/auth/logout', {
+  logout: async () => apiRequest<AuthLogoutResponse>('/auth/logout', {
     method: 'POST',
   }),
 };

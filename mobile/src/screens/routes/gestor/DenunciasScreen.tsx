@@ -18,31 +18,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useDenunciasStore } from '@/store/useDenunciasStore';
-import { denunciasAPI } from '@/services/denunciaService';
-import { notificarMudancaStatus } from '@/services/notifications';
 import type { Denuncia } from '@/types';
 import { useRouter } from 'expo-router';
 import { normalizeSituacao, SITUACAO_CONFIG, SITUACOES, type Situacao } from '@/constants';
-
-function getSit(s: string) {
-  return SITUACAO_CONFIG[normalizeSituacao(s)];
-}
-
-function parseImagens(imagens: unknown): string[] {
-  if (!imagens) return [];
-  if (Array.isArray(imagens)) {
-    return imagens.filter((imagem): imagem is string => typeof imagem === 'string');
-  }
-  if (typeof imagens !== 'string') return [];
-  try {
-    const parsed: unknown = JSON.parse(imagens);
-    return Array.isArray(parsed)
-      ? parsed.filter((imagem): imagem is string => typeof imagem === 'string')
-      : [];
-  } catch {
-    return [];
-  }
-}
+import { parseImagens } from '@/utils/parseImagens';
 
 function FiltroRow({ titulo, opcoes, valor, onChange }: {
   titulo: string;
@@ -79,7 +58,7 @@ function FiltroRow({ titulo, opcoes, valor, onChange }: {
 export default function DenunciasGestorScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { denuncias, loading, fetchDenuncias, updateDenunciaLocalmente, filtros, setFiltros, opcoes } = useDenunciasStore();
+  const { denuncias, loading, fetchDenuncias, updateDenuncia, filtros, setFiltros, opcoes } = useDenunciasStore();
 
   const [search, setSearch] = useState('');
   const [selectedDenuncia, setSelectedDenuncia] = useState<Denuncia | null>(null);
@@ -104,10 +83,8 @@ export default function DenunciasGestorScreen() {
     if (!selectedDenuncia) return;
     setUpdatingStatus(true);
     try {
-      const res = await denunciasAPI.update(selectedDenuncia.id, { situacao: novaSituacao });
+      const res = await updateDenuncia(selectedDenuncia.id, { situacao: novaSituacao });
       if (res.success) {
-        updateDenunciaLocalmente(selectedDenuncia.protocolo, novaSituacao);
-        notificarMudancaStatus(selectedDenuncia.protocolo, selectedDenuncia.tipoDenuncia, novaSituacao);
         setSelectedDenuncia((d) => d ? { ...d, situacao: novaSituacao } : d);
         Toast.show({ type: 'success', text1: 'Status atualizado!', text2: `Denúncia marcada como ${SITUACAO_CONFIG[novaSituacao].label}` });
       } else {
@@ -119,7 +96,7 @@ export default function DenunciasGestorScreen() {
   };
 
   const renderItem = ({ item }: { item: Denuncia }) => {
-    const sit = getSit(item.situacao);
+    const sit = SITUACAO_CONFIG[normalizeSituacao(item.situacao)];
     return (
       <TouchableOpacity
         style={styles.card}
@@ -277,7 +254,7 @@ export default function DenunciasGestorScreen() {
                 <Text style={styles.detailLabel}>Alterar Status</Text>
                 <View style={{ gap: 8 }}>
                   {SITUACOES.map((s) => {
-                    const cfg = getSit(s);
+                    const cfg = SITUACAO_CONFIG[normalizeSituacao(s)];
                     const current = normalizeSituacao(selectedDenuncia.situacao) === s;
                     return (
                       <TouchableOpacity

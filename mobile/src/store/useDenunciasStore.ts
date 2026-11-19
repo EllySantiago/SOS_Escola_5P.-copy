@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { denunciasAPI } from '@/services/denunciaService';
 import { notificarMudancaStatus } from '@/services/notifications';
 import { useAuthStore } from '@/store/useAuthStore';
-import type { Denuncia, DenunciaFiltros, PaginatedResponse } from '@/types';
+import type { ApiResponse, Denuncia, DenunciaFiltros, PaginatedResponse } from '@/types';
 
 interface DenunciasState {
   denuncias: Denuncia[];
@@ -19,7 +19,7 @@ interface DenunciasState {
   setPage: (page: number) => void;
   fetchDenuncias: () => Promise<void>;
   createDenuncia: (data: Omit<Denuncia, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Denuncia | null>;
-  updateDenuncia: (id: number, data: Partial<Denuncia>) => Promise<void>;
+  updateDenuncia: (id: number, data: Partial<Denuncia>) => Promise<ApiResponse<Denuncia>>;
   updateDenunciaLocalmente: (protocolo: string, novaSituacao: string) => void;
   deleteDenuncia: (id: number) => Promise<void>;
   clearError: () => void;
@@ -56,7 +56,10 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
     const { page, limit, filtros } = get();
     set({ loading: true, error: null });
     try {
-      const response = await denunciasAPI.list(page, limit, filtros);
+      const currentUser = useAuthStore.getState().user;
+      const response = currentUser?.role === 'DENUNCIANTE'
+        ? await denunciasAPI.listarMinhas(page, limit)
+        : await denunciasAPI.listarTodas(page, limit, filtros);
 
       if (response.success && response.data) {
         const paginatedData = response.data as PaginatedResponse<Denuncia>;
@@ -124,12 +127,21 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
     try {
       const response = await denunciasAPI.update(id, data);
       if (response.success && response.data) {
+        const anterior = get().denuncias.find((denuncia) => denuncia.id === id);
         set((state) => ({
           denuncias: state.denuncias.map((d) => d.id === id ? { ...d, ...data } : d),
         }));
+        if (data.situacao && anterior && data.situacao !== anterior.situacao) {
+          notificarMudancaStatus(anterior.protocolo, anterior.tipoDenuncia, data.situacao);
+        }
       }
+      return response;
     } catch (err) {
       console.error('Erro ao atualizar denúncia:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Erro desconhecido',
+      };
     }
   },
 

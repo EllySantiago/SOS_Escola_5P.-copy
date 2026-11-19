@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { usersAPI } from '@/services/userService';
+import { useGestores } from '@/hooks/useGestores';
 import type { User } from '@/types';
 
 export default function GestoresScreen() {
-  const [gestores, setGestores] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { gestores, loading, error, listar, criar, excluir } = useGestores();
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,15 +26,6 @@ export default function GestoresScreen() {
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const fetchGestores = async () => {
-    setLoading(true);
-    const res = await usersAPI.list('GESTOR');
-    if (res.success && res.data) setGestores(res.data as User[]);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchGestores(); }, []);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -49,15 +39,14 @@ export default function GestoresScreen() {
   const handleCreate = async () => {
     if (!validate()) return;
     setSubmitting(true);
-    const res = await usersAPI.create({ name: nome.trim(), email: email.trim(), password: senha, role: 'GESTOR' });
+    const res = await criar({ name: nome.trim(), email: email.trim(), password: senha, role: 'GESTOR' });
     setSubmitting(false);
     if (res.success && res.data) {
       Toast.show({ type: 'success', text1: 'Gestor criado!', text2: `${nome} foi adicionado com sucesso.` });
       setShowModal(false);
       setNome(''); setEmail(''); setSenha('');
-      fetchGestores();
     } else {
-      Toast.show({ type: 'error', text1: 'Erro', text2: 'Falha ao criar gestor' });
+      Toast.show({ type: 'error', text1: 'Erro', text2: res.error || 'Falha ao criar gestor' });
     }
   };
 
@@ -70,9 +59,8 @@ export default function GestoresScreen() {
         {
           text: 'Remover', style: 'destructive',
           onPress: async () => {
-            const res = await usersAPI.delete(gestor.id);
+            const res = await excluir(gestor.id);
             if (res.success) {
-              setGestores((g) => g.filter((u) => u.id !== gestor.id));
               Toast.show({ type: 'success', text1: 'Gestor removido' });
             } else {
               Toast.show({ type: 'error', text1: 'Erro', text2: res.error });
@@ -129,15 +117,15 @@ export default function GestoresScreen() {
         renderItem={renderItem}
         contentContainerStyle={{ padding: 16, gap: 12 }}
         refreshing={loading}
-        onRefresh={fetchGestores}
+        onRefresh={listar}
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyState}>
               <Ionicons name="people-outline" size={56} color="#d1d5db" />
-              <Text style={styles.emptyTitle}>Nenhum gestor cadastrado</Text>
+              <Text style={styles.emptyTitle}>{error || 'Nenhum gestor cadastrado'}</Text>
               <Text style={styles.emptyDesc}>Toque no + para adicionar um gestor</Text>
             </View>
-          ) : null
+          ) : undefined
         }
         showsVerticalScrollIndicator={false}
       />

@@ -14,6 +14,13 @@ export type User = {
   role: string;
 };
 
+export type CreateUserInput = {
+  email: string;
+  name: string;
+  password: string;
+  role: string;
+};
+
 export type AuthLoginResponse = {
   user: User;
   token: string;

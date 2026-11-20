@@ -29,9 +29,7 @@ export default function HomeDenuncianteScreen() {
   }, []);
 
 
-  const minhasDenuncias = denuncias
-    .filter((d) => d.userId === user?.id)
-    .slice(0, 3);
+  const minhasDenuncias = denuncias.slice(0, 3);
 
   const handleLogout = async () => {
     await logout();

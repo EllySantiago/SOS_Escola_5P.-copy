@@ -80,7 +80,7 @@ export default function WelcomeScreen() {
           <View style={styles.privacyText}>
             <Text style={styles.privacyTitle}>Sua identidade está protegida</Text>
             <Text style={styles.privacyDesc}>
-              O sistema garante o anonimato ou o sigilo dos seus dados, em total conformidade com a LGPD.
+              Denúncias anônimas não exibem seu nome para gestores, mas permanecem vinculadas à sua conta para acompanhamento.
             </Text>
           </View>
         </View>

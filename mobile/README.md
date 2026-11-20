@@ -18,7 +18,7 @@ Versoes conforme as declaracoes em `package.json`:
 | Tecnologia | Versao declarada |
 |---|---:|
 | Expo / SDK | `~58.0.26` |
-| React | `19.3.1` |
+| React | `19.3.0` |
 | React Native | `0.88.1` |
 | TypeScript | `~6.0.3` |
 | Expo Router | `~58.0.32` |
@@ -35,59 +35,78 @@ O `app.json` configura o bundler Metro para web, e `package.json` oferece o scri
 
 ## 3. Pre-requisitos
 
-- Node.js e npm. O `package.json` do app nao fixa uma versao de Node.
-- Uma instalacao do Expo Go para executar o projeto sem build nativo, respeitando as limitacoes abaixo.
-- Para emulacao: Android Studio e um emulador Android configurado; para iOS, macOS com Xcode e simulador iOS.
-- Um development build e EAS CLI sao necessarios para compilar e testar o cliente nativo de desenvolvimento.
+- Node.js e npm.
+- Expo Go atualizado para o SDK 58. O projeto ativo e `mobile/`, nao a antiga pasta `mobile/mobile/`.
+- Docker Desktop apenas para executar API, banco e seed localmente.
+- Para emulacao: Android Studio e um emulador Android configurado; para iOS, macOS com Xcode.
+- Expo Go basta para desenvolvimento no telefone; EAS e usado para gerar um APK/AAB distribuivel.
 
-## 4. Configuracao da API
+## 4. Testar a interface
 
-Copie `.env.example` para `.env` e ajuste `EXPO_PUBLIC_API_URL`:
+Para apenas abrir e avaliar as telas, nao precisa configurar backend nem criar `.env`. Na pasta `mobile/`, instale as dependencias uma vez e inicie o Expo:
 
-```sh
-cp .env.example .env
-```
-
-O valor de desenvolvimento local no exemplo e `http://localhost:8000`, que corresponde a porta configurada para o backend. Em um celular fisico, `localhost` aponta para o proprio celular: use o IP local da maquina que executa o backend, acessivel na mesma rede, ou a URL hospedada `https://s-o-s-cidade-1.onrender.com`.
-
-Os perfis de build em `eas.json` ja definem a URL da Render como `EXPO_PUBLIC_API_URL`. A instancia gratuita pode levar cerca de **30 a 60 segundos** para responder a primeira chamada depois de ficar inativa.
-
-Essa variavel e incorporada ao app cliente; nao coloque segredos nela.
-
-## 5. Como rodar
-
-Na pasta `mobile/`:
-
-```sh
+```powershell
 npm install
-npx expo start
+npm run start:go
 ```
 
-Escaneie o QR code com Expo Go ou use um emulador com o terminal do Expo aberto:
+Escaneie o QR code atual com o Expo Go. O celular e o computador devem estar na mesma rede Wi-Fi. Se a rede bloquear conexoes locais, use `npm run start:go:tunnel`. No computador, a interface tambem pode ser aberta no navegador com `npm run web`.
+
+Essa forma testa a interface publica e a navegacao. Login, cadastro, denuncias e dados do gestor precisam da API; sem ela, as operacoes de rede vao falhar.
+
+## 5. Testar app e API localmente
+
+O backend local completo pode ser iniciado na raiz do repositorio com Docker Desktop:
+
+```powershell
+docker compose up --build -d db redis api
+```
+
+O Compose aguarda o Postgres e o Redis, aplica as migrations e cria as duas contas de gestor de teste automaticamente. Nao precisa preencher `backend/.env`. Para verificar a API, abra `http://localhost:8000/health`; para conferir os logs, use `docker compose logs -f api`.
+
+Para testar somente a interface no navegador, rode `npm run web` na pasta `mobile/`. Para usar o app em um celular com a API local, crie/edite `mobile/.env` e informe o IP local do computador:
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+notepad .env
+```
+
+Configure `EXPO_PUBLIC_API_URL=http://<IP-DO-COMPUTADOR>:8000`. Descubra o IP com `ipconfig`; computador e telefone precisam estar na mesma rede e o firewall deve permitir as portas 8081 e 8000. Teste `http://<IP-DO-COMPUTADOR>:8000/health` no navegador do telefone antes de abrir o app. No emulador Android, use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. `localhost` no telefone aponta para o proprio telefone.
+
+Depois, em outro terminal, inicie o app:
+
+```powershell
+Set-Location mobile
+npm run start:go
+```
+
+O arquivo `.env` fica no computador; nao precisa recria-lo a cada execucao. Reinicie o Metro depois de alterar essa variavel. O Expo Go mantem o QR e o Metro ativos apenas enquanto o comando estiver rodando.
 
 - `a`: abrir no emulador Android.
 - `i`: abrir no simulador iOS (macOS/Xcode).
-- `npx expo start -c`: limpar o cache do Metro e iniciar novamente.
-- `npm run web` ou `npx expo start --web`: iniciar a versao web.
+- `npx expo start --go --lan -c`: limpar o cache do Metro e iniciar novamente em modo Expo Go.
 
-O app usa `expo-notifications` para notificacoes locais. **Notificacoes remotas/push nao estao implementadas** e nao funcionam no Expo Go. Um development build ou APK permite testar capacidades nativas, mas nao adiciona o fluxo de push que ainda nao existe no app e no backend.
+Para encerrar os servicos locais, na raiz do repositorio rode `docker compose down`. Isso para os containers e mantem os dados do volume local.
 
-## 6. Contas de teste
+O app usa `expo-notifications` para notificacoes locais. **Notificacoes remotas/push nao estao implementadas** e nao funcionam no Expo Go.
 
-O seed do backend cria estas contas:
+## 6. Contas e dados de teste
+
+O seed cria estas contas locais:
 
 | Perfil | E-mail | Senha |
 |---|---|---|
 | Gestor | `gestor1.teste@soscidade.com` | `Teste@123` |
 | Gestor | `gestor2.teste@soscidade.com` | `Teste@123` |
+| Denunciante | `denunciante.teste@soscidade.com` | `Teste@123` |
 
-Para criar as contas em um ambiente de desenvolvimento local, execute no backend:
+Ao usar `docker compose up --build -d db redis api`, o seed e aplicado automaticamente. Ele cria tres denuncias marcadas como `DADO DE TESTE`, duas anonimas e uma identificada, para o gestor validar a listagem, os filtros e o dashboard.
 
-```sh
-npx prisma db seed
-```
+O seed faz upsert das contas de teste e cria as denuncias somente se os protocolos ainda nao existirem. **Use somente em desenvolvimento local; nunca execute para popular contas de teste em producao.**
 
-O seed faz upsert dos dois gestores. **Use somente em desenvolvimento local; nunca execute para popular contas de teste em producao.** O seed nao cria uma conta de denunciante: crie uma pela tela de cadastro do app.
+No formulario de denuncia, a opcao pre-selecionada e **Denunciar anonimamente**. O nome e o identificador da conta nao sao devolvidos pela API, mas o vinculo interno e mantido para o titular acompanhar a ocorrencia. Gestores com acesso direto ao banco podem relacionar esse registro a conta; portanto, nao e anonimato absoluto.
+
+No login e no cadastro, a pessoa precisa marcar uma caixa inicialmente desmarcada, apos consultar os Termos de Uso e a Politica de Privacidade. Os aceites e a versao `1.0` ficam registrados no banco. O texto informa que o projeto e um prototipo academico e ainda precisa de revisao juridica e de um canal oficial de contato antes de uso em producao.
 
 ## 7. Estrutura de pastas e arquitetura
 
@@ -100,7 +119,6 @@ mobile/
 |   |-- (public)/                # index, login, register
 |   |-- (denunciante)/           # home, nova-denuncia, minhas-denuncias, detalhe-denuncia
 |   `-- (gestor)/                # denuncias, dashboard, mapa, gestores
-|-- App.tsx                      # arquivo presente; nao e o entrypoint declarado
 |-- index.ts                     # polyfills web e expo-router/entry
 `-- src/
     |-- components/
@@ -110,8 +128,6 @@ mobile/
     |   `-- gestor/
     |-- constants/               # configuracao, bairros, tipos, situacoes, tema
     |-- hooks/                   # formularios, cadastro, gestores, guards, notificacoes
-    |-- models/                  # aliases/reexports de tipos
-    |-- navigation/              # navegador React Navigation legado
     |-- screens/routes/          # componentes de tela usados pelos arquivos de rota
     |   |-- public/
     |   |-- denunciante/
@@ -119,13 +135,12 @@ mobile/
     |-- services/                # servicos de dominio e http.ts
     |-- store/                   # stores Zustand
     |-- types/
-    |-- utils/
-    `-- viewmodels/              # ViewModels do fluxo legado
+    `-- utils/
 ```
 
 Os arquivos em `app/` compoem layouts e encaminham para as telas em `src/screens/routes/`. No fluxo ativo, as telas combinam componentes e hooks; os hooks podem coordenar stores e servicos; as stores tambem chamam servicos; os servicos usam `src/services/http.ts` para fazer `fetch` na API. Nem todo fluxo atravessa todas as camadas: por exemplo, o cadastro usa o hook `useCadastroUsuario` e o servico de usuarios diretamente.
 
-O ponto de entrada declarado em `package.json` e `index.ts`, que carrega `expo-router/entry`. Alem da estrutura ativa acima, ainda existem arquivos da organizacao anterior em `src/models/`, `src/navigation/`, `src/viewmodels/`, `src/screens/LoginScreen.tsx`, `src/screens/NovaDenunciaScreen.tsx` e `App.tsx`. Eles nao sao descritos como parte do fluxo atual do Expo Router; sua remocao ou migracao ainda precisa ser avaliada.
+O ponto de entrada declarado em `package.json` e `index.ts`, que carrega `expo-router/entry`. A copia aninhada `mobile/mobile/` e os arquivos do fluxo antigo (ViewModels, navegador React Navigation, telas e modelos duplicados) foram removidos; o Expo Router em `app/` e o unico fluxo de telas.
 
 Fluxo de criar denuncia:
 
@@ -172,7 +187,7 @@ Os grupos usam `useRoleGuard`: visitante em area protegida vai para `/login`; ge
 
 ## 9. Autenticacao e seguranca no app
 
-- No login nativo, `useAuthStore` grava o token em `expo-secure-store` na chave `authToken` e o perfil na chave `userRole`. O helper legado `src/services/tokenStorage.ts` usa a chave `sos_cidade_auth_token`; ele pertence ao fluxo antigo baseado em `AuthService`/ViewModels.
+- No login nativo, `useAuthStore` grava o token em `expo-secure-store` na chave `authToken` e o perfil na chave `userRole`.
 - O cliente HTTP le `authToken` e envia `Authorization: Bearer <token>` quando a requisicao autenticada tem token.
 - O persist middleware do Zustand usa AsyncStorage com a chave `auth-storage`. O `partialize` grava somente `user` e `isAuthenticated`; `isLoading` nao e persistido. O estado serializado pelo middleware inclui esses campos dentro do envelope de persistencia do Zustand. Senha e token nao fazem parte desse estado.
 - No web, `index.ts` substitui as funcoes de `expo-secure-store` por acesso a `window.localStorage`; portanto, nesse ambiente o token nao fica em armazenamento nativo criptografado.
@@ -187,17 +202,17 @@ Os endpoints sao relativos a `EXPO_PUBLIC_API_URL` e, no backend atual, nao usam
 | Entrar | `/auth/login` | POST | Sem autenticacao |
 | Sair | `/auth/logout` | POST | Rota sem middleware de autenticacao |
 | Cadastro de cidadao | `/users` | POST | Sem autenticacao; o backend cria sempre `DENUNCIANTE` |
-| Criar gestor pela tela de gestores | `/users` | POST | A rota nao exige perfil; atualmente o backend ignora o papel enviado e cria `DENUNCIANTE` |
+| Criar gestor pela tela de gestores | `/users` | POST | Nao ha endpoint administrativo; cadastro publico exige aceite legal e cria sempre `DENUNCIANTE` |
 | Listar gestores | `/users?role=GESTOR` | GET | `GESTOR` (o helper tambem pode chamar `/users` sem `role`; ambas as rotas exigem `GESTOR`) |
 | Remover gestor | `/users/:id` | DELETE | `GESTOR` |
-| Listar denuncias para gestor | `/denuncias?_page=...&_limit=...&_meta=1` | GET | `GESTOR` |
+| Listar denuncias para gestor | `/denuncias?_page=...&_limit=...&_meta=1&tipoDenuncia=...&bairroOcorrencia=...&situacao=...` | GET | `GESTOR` |
 | Listar denuncias do usuario autenticado | `/denuncias/minhas?_page=...&_limit=...` | GET | Qualquer usuario autenticado; o backend filtra pelo usuario do token |
-| Consultar denuncia por id | `/denuncias/:id` | GET | Qualquer usuario autenticado; o helper existe, mas a tela de detalhes ativa procura a denuncia na store |
+| Consultar denuncia por id | `/denuncias/:id` | GET | Titular da denuncia ou `GESTOR`; outros denunciantes recebem 404. A tela ativa de detalhes tambem pode usar a store alimentada por `/denuncias/minhas` |
 | Criar denuncia | `/denuncias` | POST | Qualquer usuario autenticado |
 | Alterar situacao | `/denuncias/:id` | PATCH | `GESTOR` |
 | Excluir denuncia | `/denuncias/:id` | DELETE | `GESTOR`; a store expoe a operacao, sem chamada por tela ativa encontrada |
 
-Listagem de denuncias aceita parametros de paginacao e filtros de tipo, bairro e situacao. O backend monta `req.user` a partir do token nas rotas de denuncias. A tabela descreve as verificacoes das rotas atuais do backend, nao apenas os guards do cliente.
+Cadastro e login exigem aceite explicito dos Termos de Uso e da Politica de Privacidade, desmarcado por padrao; o backend registra data e versao do aceite. Listagem de denuncias aceita parametros de paginacao e filtros de tipo, bairro e situacao; o backend aplica os filtros tanto aos resultados quanto ao total da paginacao. O backend monta `req.user` a partir do token nas rotas de denuncias. A tabela descreve as verificacoes das rotas atuais do backend, nao apenas os guards do cliente.
 
 ## 11. Permissoes do app
 
@@ -232,7 +247,7 @@ O projeto EAS configurado em `app.json` tem o ID `114df36c-08b7-4bc9-8bc1-f954ef
 | `preview` | Distribuicao interna, APK |
 | `production` | App Bundle (`.aab`) |
 
-Os tres perfis definem `EXPO_PUBLIC_API_URL` para a API hospedada. Com EAS CLI disponivel:
+Os perfis definem `EXPO_PUBLIC_API_URL` para `https://sos-cidade-api.onrender.com`, o dominio esperado para o servico declarado em `render.yaml`. Essa URL so funcionara depois que o servico for publicado e estiver respondendo. Com EAS CLI disponivel:
 
 ```sh
 eas login
@@ -242,6 +257,16 @@ eas build -p android --profile preview
 O APK interno fica disponivel no link da build mostrado pelo EAS CLI e na pagina de builds do projeto EAS. O perfil `development` tambem gera APK para instalar o development client; `production` gera `.aab`, nao APK.
 
 OTA esta desativado (`updates.enabled: false` em `app.json`). Cache offline de denuncias/requisicoes nao foi encontrado; as operacoes de API precisam de conexao.
+
+O QR do Expo Go nao publica o aplicativo: ele serve o bundle do computador enquanto o Metro estiver em execucao. Para distribuir o app Android sem Expo Go, primeiro publique e valide a API HTTPS; depois gere o APK com o perfil `preview` do EAS.
+
+### O que falta para publicar
+
+Na verificacao de 19/11/2026, os enderecos de producao documentados nao estavam servindo a aplicacao: a API antiga respondeu 503/timeout, o dominio `sos-cidade-api.onrender.com` respondeu 404 em `/health` e `sos-cidade-front.vercel.app` respondeu 404. Portanto, os arquivos de configuracao nao significam que API, site ou APK ja estejam publicados.
+
+1. **API:** conecte o repositorio ao Render usando `render.yaml` (servico `sos-cidade-api`, raiz `backend`). Configure Postgres e Redis acessiveis pela API e preencha as variaveis solicitadas pelo blueprint: `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `DATA_ENCRYPTION_KEY` e `FRONTEND_URL`. Use uma chave de criptografia propria de 32 bytes em hexadecimal e um segredo JWT forte; nao reutilize as chaves locais do Compose. O comando de inicio aplica migrations. Considere a API pronta quando `https://sos-cidade-api.onrender.com/health` responder `OK`.
+2. **Site web:** importe o repositorio no Vercel com a raiz do projeto `frontend/` e configure `NEXT_PUBLIC_API_URL` com a URL HTTPS da API publicada. O site web e o app React Native sao entregas distintas.
+3. **App Android:** depois de a API HTTPS responder, rode `eas login` e `eas build -p android --profile preview` dentro de `mobile/`. O APK gerado no EAS pode entao ser compartilhado para instalacao. A configuracao e o `projectId` ja existem, mas e preciso ter acesso a conta EAS e completar a build.
 
 ## 14. Qualidade e testes
 
@@ -264,8 +289,10 @@ Esses caminhos apontam para testes do repositorio; nao implicam que exista uma s
 
 ## 15. Problemas comuns
 
-- **Tela branca ou `Network request failed`:** confira `EXPO_PUBLIC_API_URL`, se a API esta acessivel e se o dispositivo pode acessar o host. Em celular fisico, substitua `localhost` pelo IP da maquina na rede ou use a URL da Render.
-- **Primeira chamada lenta:** o backend gratuito da Render pode estar iniciando; aguarde de 30 a 60 segundos e tente novamente.
+- **Expo Go diz que o SDK e incompatível:** confirme que o terminal esta em `...\\SOS_Escola_5P.-copy\\mobile`, pare servidores Metro antigos com `Ctrl+C` e gere um QR novo com `npm run start:go`. A antiga pasta `mobile/mobile/` era SDK 56; a raiz ativa usa SDK 58.
+- **QR abre uma pagina que nao carrega:** confirme que telefone e computador estao na mesma Wi-Fi; se a rede bloquear o Metro, use `npm run start:go:tunnel`.
+- **Tela branca ou `Network request failed`:** a interface pode abrir sem API, mas login e dados precisam do backend. Para o backend local, confira `/health` e use o IP do computador no `.env` do app fisico, nao `localhost`.
+- **Erro da API hospedada:** em 19/11/2026, `s-o-s-cidade-1.onrender.com` retornou 503/timeout e `sos-cidade-api.onrender.com/health` retornou 404. Os enderecos configurados nao estavam servindo o backend esperado nessa verificacao.
 - **Bundle desatualizado ou erro de modulo no Metro:** pare o servidor e rode `npx expo start -c`.
 - **Diff muito grande sem muitas alteracoes:** confira se a diferenca e apenas de CRLF/LF antes de normalizar arquivos; evite converter a arvore inteira sem necessidade.
 - **Permissao negada no emulador:** permita camera, fotos, localizacao ou notificacoes nas configuracoes do app/dispositivo e tente novamente. A localizacao e solicitada quando o usuario aciona o botao de localizacao.
@@ -276,9 +303,9 @@ Esses caminhos apontam para testes do repositorio; nao implicam que exista uma s
 - `RECORD_AUDIO` esta declarado no Android sem uso de gravacao encontrado. A permissao “always” de localizacao tambem esta descrita no plugin, enquanto o codigo pede somente localizacao em primeiro plano; revisar se ambas as declaracoes sao necessarias.
 - Push remoto nao esta implementado. Notificacoes atuais sao locais.
 - Cache offline nao esta implementado e OTA esta desativado.
-- Permanecem arquivos da arquitetura anterior (`src/models`, `src/navigation`, `src/viewmodels`, telas antigas em `src/screens/` e `App.tsx`) ao lado do fluxo Expo Router. Ainda precisa ser decidido se devem ser migrados ou removidos.
-- Existe tambem uma pasta aninhada `mobile/mobile/` com outra arvore de app e codigo. Ela nao e o diretorio apontado pelo `package.json` deste projeto e precisa ser identificada como copia legada ou removida.
-- O helper de `GET /denuncias/:id` esta protegido por autenticacao, mas nao foi encontrada verificacao de propriedade da denuncia nesse controlador. O backend deve definir e aplicar a regra de acesso por id.
-- `expo-doctor` reportou peer dependencies ausentes (`expo-font` e `@shopify/react-native-skia`) e diferencas de versao de pacotes; a verificacao do schema do Expo falhou por falta de conexao na ultima execucao.
-- A pasta `.expo/` nao esta ignorada pelo `.gitignore`, segundo `expo-doctor`.
+- `GET /denuncias/:id` permite acesso somente ao titular da denuncia ou a um gestor; para outro denunciante responde 404.
+- `render.yaml` e configuracao para criar o servico, nao prova de publicacao. O backend exige variaveis secretas no painel Render, incluindo `DATA_ENCRYPTION_KEY`.
+- A URL de frontend de exemplo `sos-cidade-front.vercel.app` respondeu 404 na verificacao de 19/11/2026; ainda e preciso publicar o projeto `frontend/` no Vercel para disponibilizar a versao web.
+- A publicacao Android pelo EAS depende de uma API HTTPS publicada e acessivel; o `projectId` configurado, sozinho, nao representa um build ou publicacao concluida.
+- `.expo/` e `.tsupgrader/` sao arquivos gerados e ficam ignorados pelo `.gitignore`.
 - `knip` ainda nao produziu uma analise de arquivos/exports nao usados; a execucao terminou por falta de memoria.

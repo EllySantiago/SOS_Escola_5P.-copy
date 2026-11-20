@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/store/useAuthStore';
 import { useDenunciasStore } from '@/store/useDenunciasStore';
 import { normalizeSituacao, SITUACAO_CONFIG, SITUACOES, type Situacao } from '@/constants';
 import DenunciaCard from '@/components/denuncia/DenunciaCard';
@@ -23,7 +22,6 @@ import { colors } from '@/constants/theme';
 
 export default function MinhasDenunciasScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
   const { denuncias, loading, error, fetchDenuncias } = useDenunciasStore();
   const [search, setSearch] = useState('');
   const [filtroSituacao, setFiltroSituacao] = useState<Situacao | null>(null);
@@ -32,7 +30,7 @@ export default function MinhasDenunciasScreen() {
     fetchDenuncias();
   }, []);
 
-  const minhas = denuncias.filter((d) => d.userId === user?.id);
+  const minhas = denuncias;
 
   const filtered = minhas.filter((d) => {
     const matchSearch =

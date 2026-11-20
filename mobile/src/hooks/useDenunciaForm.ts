@@ -14,7 +14,7 @@ export function useDenunciaForm() {
   const [bairro, setBairro] = useState('');
   const [descricao, setDescricao] = useState('');
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
-  const [identificacao, setIdentificacao] = useState(true);
+  const [identificacao, setIdentificacao] = useState(false);
   const [imagens, setImagens] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [protocolo, setProtocolo] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export function useDenunciaForm() {
         setBairro('');
         setDescricao('');
         setImagens([]);
-        setIdentificacao(true);
+        setIdentificacao(false);
       } else {
         Toast.show({ type: 'error', text1: 'Erro', text2: 'Não foi possível registrar a denúncia.' });
       }

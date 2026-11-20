@@ -204,20 +204,20 @@ A análise de conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.70
 * Senha nunca armazenada ou retornada em texto legível.  
 * Distinção entre denúncia identificada e anônima prevista desde a concepção do modelo de dados.  
 * Mecanismo de consentimento explícito no formulário de denúncia.  
+* Aceite explícito, desmarcado por padrão, dos Termos de Uso e da Política de Privacidade no cadastro e em cada login; data e versão ficam registradas no usuário.
 * Credenciais de infraestrutura mantidas fora do código-fonte.
 
 ### **7.2 Pontos pendentes, sem urgência imediata**
 
-* Ausência de política de privacidade formal dentro da aplicação (o texto da página inicial constitui declaração de marketing, não política de privacidade).  
-* Ausência de separação entre o consentimento do cadastro de conta e o consentimento da denúncia.  
+* O conteúdo de privacidade e termos disponível no app é informativo para o protótipo; ainda requer revisão jurídica, definição do controlador e canal oficial de contato antes de produção.
 * Ausência de canal declarado para exercício de direitos do titular.  
 * Ausência de prazo de retenção definido.  
 * Ausência de processo formal de resposta a incidente de segurança.
 
 ### **7.3 Pontos urgentes**
 
-1. **Garantia de anonimato não imposta pelo backend** — contradição direta com a promessa realizada na interface inicial da aplicação, em potencial violação aos princípios da finalidade e da transparência (art. 6º da LGPD).  
-2. **Visualização irrestrita de denúncias por qualquer usuário autenticado** — violação aos princípios da finalidade e da minimização (art. 6º da LGPD).  
+1. **Anonimização parcial** — o backend oculta nome e `userId` nas respostas anônimas, mas mantém a relação interna para histórico; operadores com acesso ao banco podem vincular denúncia e conta.
+2. **Acesso por ID (corrigido)** — a consulta agora é limitada ao titular ou a gestor; respostas 404 impedem que outro denunciante leia uma ocorrência alheia.
 3. **Ausência de mecanismo de exclusão de conta pelo próprio titular** — lacuna frente ao direito de eliminação previsto no art. 18 da LGPD.
 
 ---
@@ -232,16 +232,17 @@ Esta seção registra as correções efetivamente implementadas no código-fonte
 | ----- | ----- | ----- | ----- |
 | Rotas de usuário | Sem autenticação em `GET /users` e `DELETE /users/:id` | Autenticação e restrição a perfil gestor aplicadas | R1 |
 | Criação de conta | Perfil aceito da requisição (`data.role`) | Perfil sempre forçado para `DENUNCIANTE` no cadastro público | R2 |
-| Anonimização | Priorizava valor recebido do cliente | `identificacao` verificado primeiro; nome nunca persistido quando anônimo | R4 |
+| Anonimização | Priorizava valor recebido do cliente | Com `identificacao: false`, o nome não é persistido e nome/`userId` são removidos das respostas; a relação com o titular permanece no banco para o histórico | R4 (parcial: vínculo interno) |
 | Chave do token (JWT) | Valor padrão de contingência (`supersecret123`) | Leitura centralizada, com interrupção da inicialização caso a variável não esteja definida | R5 |
-| Token no frontend | Duplicado em cookie acessível via script | Duplicidade removida; mantido apenas o cookie `HttpOnly` | R6 |
-| Login | Tentativas ilimitadas | Limitação de 10 tentativas por IP a cada 15 minutos | R7 |
-| Robustez de senha | Validada apenas na interface | Backend rejeita senha com menos de 6 caracteres | R8 |
+| Token no frontend | Duplicado entre cookie e resposta JSON | A API ainda retorna JWT no corpo; web mantém cópia acessível a JavaScript e mobile guarda no SecureStore | R6 (pendente/parcial) |
+| Login | Tentativas ilimitadas | Ainda sem rate limiting no backend | R7 (pendente) |
+| Robustez de senha | Validada apenas na interface | Backend exige no mínimo 6 caracteres; não exige senha forte | R8 (parcial) |
 | Dados em repouso | Texto legível | Campos `nomeDenunciante` e `descricaoOcorrencia` criptografados (AES-256-GCM) | R9 |
-| Retenção de dados | Indefinida | Rotina semanal de anonimização de denúncias finalizadas com mais de 180 dias | R10 |
+| Retenção de dados | Indefinida | Ainda sem rotina de expurgo ou anonimização; o cron limpa cache e agrega métricas | R10 (pendente) |
 | Log de erro | Registro do objeto de erro completo | Registro restrito à mensagem do erro | R11 |
 | Autorização em denúncias | Qualquer autenticado podia alterar/excluir qualquer denúncia | Ações de alteração e exclusão restritas a perfil gestor | R3 (parcial) |
-| Visualização de denúncias | Listagem geral irrestrita | Listagem geral restrita a gestor; novo endpoint `GET /denuncias/minhas` para o próprio usuário | R3 |
+| Visualização de denúncias | Listagem geral irrestrita e detalhe por ID sem autoria | Listagem geral restrita a gestor, `GET /denuncias/minhas` filtra pelo token e `GET /denuncias/:id` limita ao titular ou gestor | R3 |
+| Consentimento legal | Sem registro de aceite | Cadastro e login exigem aceite explícito dos dois documentos e registram data/versão `1.0` no usuário | Transparência |
 | Campos aceitos na atualização | Corpo da requisição aceito integralmente | Apenas o campo `situacao` é processado | — |
 
 Foram também criados dois perfis de gestor para fins de teste, por meio de rotina de *seed* do Prisma, documentados no arquivo de variáveis de ambiente de exemplo do projeto.
@@ -262,9 +263,13 @@ A tabela a seguir relaciona cada risco identificado na seção 5.2 ao item de im
 
 | Risco | Nível | Status |
 | ----- | ----- | ----- |
-| R1, R2, R3, R4 | Crítico | Tratados |
-| R5, R10 | Alto | Tratados |
-| R6, R7, R8, R9 | Médio | Tratados |
+| R1, R2, R3 | Crítico | Tratados no backend |
+| R4 | Crítico | Parcial: identidade removida das respostas, mas vínculo interno mantido |
+| R5 | Alto | Tratado |
+| R10 | Alto | Pendente: não há política/rotina de retenção |
+| R6, R7 | Médio | Pendentes/parciais: token duplicado e ausência de rate limiting |
+| R8 | Médio | Parcial: mínimo de 6 caracteres, sem regra de senha forte |
+| R9 | Médio | Tratado para nome e descrição; fotos permanecem sem criptografia adicional |
 | R11 | Baixo | Tratado |
 
 ### **8.4 Histórico de versões e registro de desvio de branch**
@@ -278,6 +283,12 @@ Durante a execução do trabalho, parte das correções foi inicialmente impleme
 | Posterior a 25/09/2026 (data exata não registrada) | Os três itens pendentes foram reaplicados diretamente na branch de segurança de referência. Na sequência, o conjunto de alterações foi submetido a revisão de código automatizada (seção 9), cujos apontamentos adicionais foram igualmente corrigidos nessa branch. |
 
 Este registro é mantido para fins de rastreabilidade do processo, evidenciando que o desvio identificado em 25/09/2026 não correspondeu a uma correção não realizada, mas a uma correção realizada em local incorreto do controle de versão — situação sanada antes da consolidação final descrita nas seções 8.1 a 8.3.
+
+### **8.5 Revalidação do repositório em 19/11/2026**
+
+A inspeção do código atual encontrou diferenças em relação aos estados descritos nas versões anteriores deste documento. Em especial, não há limitação de tentativas de login nem rotina de retenção; o token ainda aparece no corpo da resposta de login; senha é validada somente pelo mínimo de seis caracteres; e a denúncia anônima permanece associada internamente ao usuário para permitir histórico. As tabelas das seções 8.1 a 8.3 foram ajustadas para refletir essas evidências. Foram adicionados aceite registrado de termos/política, ocultação do identificador em respostas anônimas e controle de propriedade no detalhe por ID.
+
+Os testes executáveis encontrados ficam em `backend/tests/unit/`, `tests/` e `e2e/tests/`. Não existe a pasta `mobile/.maestro/`, workflow `mobile-e2e` nem suíte Jest própria do app mobile; `mobile/testes/` contém documentos de planejamento, não testes automatizados.
 
 ---
 
@@ -294,15 +305,15 @@ As alterações descritas na seção 8 foram submetidas a revisão de código au
 
 ## **10 CONSIDERAÇÕES FINAIS E PRÓXIMOS PASSOS**
 
-Todos os riscos classificados como crítico ou alto na análise da seção 5 foram tratados na implementação registrada na seção 8\. Os itens classificados como *could have* na priorização MoSCoW (seção 4\) foram igualmente contemplados, com exceção do armazenamento segregado de evidências fotográficas, mantido como melhoria futura.
+Nem todos os riscos identificados foram tratados: R4 permanece parcial e R10 continua pendente; R6, R7 e R8 também têm lacunas descritas na seção 8.5. A criptografia de fotos, retenção automática e armazenamento segregado de evidências não estão implementados.
 
 Permanecem como trabalho futuro, não contemplados no escopo desta entrega:
 
-* Política de privacidade formal na aplicação;  
+* Revisão jurídica dos Termos de Uso e da Política de Privacidade do protótipo, identificação do controlador e canal para solicitações de titulares;
 * Mecanismo de exclusão de conta pelo próprio titular (LGPD, art. 18);  
-* Canal formal para exercício de direitos do titular de dados;  
+* Política de retenção e rotina de expurgo/anonimização;
 * Processo documentado de resposta a incidente de segurança;  
-* Cabeçalhos de segurança HTTP adicionais (*helmet*), validação de schema de entrada e autenticação multifator — itens mapeados para o Requisito 4 (Disponibilidade e proteção contra ataques digitais) e o Requisito 5 (Backup e continuidade de operação), de entrega subsequente.
+* Rate limiting de login, senha forte, eliminação de token duplicado, criptografia de fotos, cabeçalhos HTTP adicionais (*helmet*), validação de schema, autenticação multifator e controles de backup/continuidade.
 
 ---
 

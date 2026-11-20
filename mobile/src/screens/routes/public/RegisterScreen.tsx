@@ -16,6 +16,7 @@ import { useCadastroUsuario } from '@/hooks/useCadastroUsuario';
 import Button from '@/components/ui/Button';
 import TextField from '@/components/ui/TextField';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import ConsentAgreement from '@/components/ui/ConsentAgreement';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -27,11 +28,13 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
     password?: string;
     confirmPassword?: string;
+    legal?: string;
   }>({});
 
   const validate = () => {
@@ -44,6 +47,7 @@ export default function RegisterScreen() {
     if (password !== confirmPassword) {
       newErrors.confirmPassword = 'As senhas não coincidem';
     }
+    if (!acceptedLegal) newErrors.legal = 'Confirme a leitura e aceite os documentos para continuar.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -57,6 +61,8 @@ export default function RegisterScreen() {
         email: email.trim().toLowerCase(),
         password,
         role: 'DENUNCIANTE',
+        acceptedTerms: acceptedLegal,
+        acceptedPrivacy: acceptedLegal,
       });
 
       if (response.success) {
@@ -152,6 +158,14 @@ export default function RegisterScreen() {
                   <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color="#9ca3af" />
                 </TouchableOpacity>
               }
+            />
+            <ConsentAgreement
+              checked={acceptedLegal}
+              onChange={(checked) => {
+                setAcceptedLegal(checked);
+                setErrors((current) => ({ ...current, legal: undefined }));
+              }}
+              error={errors.legal}
             />
             <Button title="CADASTRAR" onPress={handleRegister} loading={isLoading} accessibilityLabel="Cadastrar" />
           </View>

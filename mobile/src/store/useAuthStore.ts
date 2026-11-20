@@ -12,7 +12,11 @@ interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; role?: string; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+    acceptedLegal: boolean,
+  ) => Promise<{ success: boolean; role?: string; error?: string }>;
   logout: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
 }
@@ -26,10 +30,10 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
-      login: async (email, password) => {
+      login: async (email, password, acceptedLegal) => {
         set({ isLoading: true });
         try {
-          const response = await authAPI.login(email, password);
+          const response = await authAPI.login(email, password, acceptedLegal);
 
           if (response.success && response.data) {
             const rawRole = response.data.user.role;

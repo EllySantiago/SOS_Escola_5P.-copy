@@ -1,7 +1,7 @@
 import {
   Modal,
+  Pressable,
   ScrollView,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -64,17 +64,44 @@ export default function NovaDenunciaScreen() {
             </View>
           </View>
 
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Identificar-me</Text>
-              <Text style={styles.switchDesc}>Seu nome será associado à denúncia</Text>
-            </View>
-            <Switch
-              value={form.identificacao}
-              onValueChange={form.setIdentificacao}
-              trackColor={{ false: colors.border, true: '#93c5fd' }}
-              thumbColor={form.identificacao ? colors.primary : colors.grayLight}
-            />
+          <View style={styles.field}>
+            <Text style={styles.label}>Como deseja registrar?</Text>
+            <Pressable
+              style={[styles.identityOption, !form.identificacao && styles.identityOptionSelected]}
+              onPress={() => form.setIdentificacao(false)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: !form.identificacao }}
+              accessibilityLabel="Denunciar anonimamente"
+            >
+              <Ionicons
+                name={!form.identificacao ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={!form.identificacao ? colors.primary : colors.gray}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.identityTitle}>Denunciar anonimamente</Text>
+                <Text style={styles.switchDesc}>
+                  Gestores não verão seu nome. A denúncia continua vinculada à sua conta para acompanhamento.
+                </Text>
+              </View>
+            </Pressable>
+            <Pressable
+              style={[styles.identityOption, form.identificacao && styles.identityOptionSelected]}
+              onPress={() => form.setIdentificacao(true)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: form.identificacao }}
+              accessibilityLabel="Identificar-me na denúncia"
+            >
+              <Ionicons
+                name={form.identificacao ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={form.identificacao ? colors.primary : colors.gray}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.identityTitle}>Identificar-me</Text>
+                <Text style={styles.switchDesc}>Seu nome será associado à denúncia.</Text>
+              </View>
+            </Pressable>
           </View>
 
           <FotosPicker images={form.imagens} onChange={form.setImagens} />
@@ -144,11 +171,13 @@ const styles = StyleSheet.create({
     fontSize: 15, color: colors.inputText, minHeight: 120,
   },
   charCount: { fontSize: 11, color: colors.gray, textAlign: 'right' },
-  switchRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: colors.surface, borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: colors.border,
+  identityOption: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    backgroundColor: colors.surface, borderRadius: 14, padding: 14,
+    borderWidth: 1.5, borderColor: colors.border,
   },
+  identityOptionSelected: { borderColor: colors.primary, backgroundColor: colors.surfaceTint },
+  identityTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 3 },
   switchDesc: { fontSize: 12, color: colors.gray, marginTop: 2 },
   submitBtn: {
     backgroundColor: colors.primary, height: 54, borderRadius: 14,

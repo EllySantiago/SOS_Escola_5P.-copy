@@ -1,29 +1,5 @@
 import { apiRequest } from './http';
-import type { Denuncia, DenunciaFiltros, NovaDenunciaInput, PaginatedResponse } from '@/types';
-
-/**
- * Service: só conhece o endpoint /denuncias.
- */
-export const DenunciaService = {
-  async criar(dados: NovaDenunciaInput): Promise<Denuncia> {
-    const response = await apiRequest<Denuncia>('/denuncias', {
-      method: 'POST',
-      body: JSON.stringify(dados),
-    });
-    if (!response.success || !response.data) {
-      throw new Error(response.error || 'Não foi possível registrar a denúncia');
-    }
-    return response.data;
-  },
-
-  async listarMinhas(): Promise<Denuncia[]> {
-    const response = await denunciasAPI.listarMinhas();
-    if (!response.success || !response.data) {
-      throw new Error(response.error || 'Não foi possível carregar suas denúncias');
-    }
-    return response.data.data;
-  },
-};
+import type { Denuncia, DenunciaFiltros, PaginatedResponse } from '@/types';
 
 function paginationQuery(page: number, limit: number, includeMeta = false): string {
   const params = new URLSearchParams({
@@ -48,9 +24,6 @@ export const denunciasAPI = {
     });
     return apiRequest<PaginatedResponse<Denuncia>>(`/denuncias?${params.toString()}`);
   },
-
-  list: async (page = 1, limit = 50, filtros: DenunciaFiltros = {}) =>
-    denunciasAPI.listarTodas(page, limit, filtros),
 
   getById: async (id: number) => apiRequest<Denuncia>(`/denuncias/${id}`),
 

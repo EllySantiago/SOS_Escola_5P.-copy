@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import Button from '@/components/ui/Button';
 import TextField from '@/components/ui/TextField';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import ConsentAgreement from '@/components/ui/ConsentAgreement';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -24,7 +25,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; legal?: string }>({});
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -32,6 +34,7 @@ export default function LoginScreen() {
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'E-mail inválido';
     if (!password.trim()) newErrors.password = 'Senha obrigatória';
     else if (password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
+    if (!acceptedLegal) newErrors.legal = 'Confirme a leitura e aceite os documentos para continuar.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -39,7 +42,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!validate()) return;
 
-    const result = await login(email.trim(), password);
+    const result = await login(email.trim(), password, acceptedLegal);
 
     if (result.success) {
       Toast.show({ type: 'success', text1: 'Login realizado!', text2: `Bem-vindo de volta` });
@@ -100,6 +103,14 @@ export default function LoginScreen() {
                   <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color="#9ca3af" />
                 </TouchableOpacity>
               }
+            />
+            <ConsentAgreement
+              checked={acceptedLegal}
+              onChange={(checked) => {
+                setAcceptedLegal(checked);
+                setErrors((current) => ({ ...current, legal: undefined }));
+              }}
+              error={errors.legal}
             />
             <Button title="ENTRAR" onPress={handleLogin} loading={isLoading} accessibilityLabel="Entrar" />
           </View>

@@ -19,6 +19,8 @@ export type CreateUserInput = {
   name: string;
   password: string;
   role: string;
+  acceptedTerms?: boolean;
+  acceptedPrivacy?: boolean;
 };
 
 export type AuthLoginResponse = {

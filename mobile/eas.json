@@ -11,7 +11,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://s-o-s-cidade-1.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://sos-cidade-api.onrender.com"
       }
     },
     "preview": {
@@ -20,7 +20,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://s-o-s-cidade-1.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://sos-cidade-api.onrender.com"
       }
     },
     "production": {
@@ -28,7 +28,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://s-o-s-cidade-1.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://sos-cidade-api.onrender.com"
       }
     }
   },

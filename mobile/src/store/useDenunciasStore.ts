@@ -69,11 +69,11 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
 
         // notifica o usuário quando a situação de uma denúncia dele mudou
         const anteriores = new Map(get().denuncias.map((d) => [d.id, d.situacao]));
-        const meuId = useAuthStore.getState().user?.id;
-        if (anteriores.size > 0 && meuId !== undefined) {
+        const role = useAuthStore.getState().user?.role;
+        if (anteriores.size > 0 && role === 'DENUNCIANTE') {
           items.forEach((d) => {
             const antes = anteriores.get(d.id);
-            if (antes && antes !== d.situacao && d.userId === meuId) {
+            if (antes && antes !== d.situacao) {
               notificarMudancaStatus(d.protocolo, d.tipoDenuncia, d.situacao);
             }
           });

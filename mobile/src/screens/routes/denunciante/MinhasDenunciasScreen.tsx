@@ -17,12 +17,13 @@ import { normalizeSituacao, SITUACAO_CONFIG, SITUACOES, type Situacao } from '@/
 import DenunciaCard from '@/components/denuncia/DenunciaCard';
 import EmptyState from '@/components/feedback/EmptyState';
 import ErrorState from '@/components/feedback/ErrorState';
+import OfflineBanner from '@/components/feedback/OfflineBanner';
 import LoadingState from '@/components/feedback/LoadingState';
 import { colors } from '@/constants/theme';
 
 export default function MinhasDenunciasScreen() {
   const router = useRouter();
-  const { denuncias, loading, error, fetchDenuncias } = useDenunciasStore();
+  const { denuncias, loading, error, offline, cachedAt, fetchDenuncias } = useDenunciasStore();
   const [search, setSearch] = useState('');
   const [filtroSituacao, setFiltroSituacao] = useState<Situacao | null>(null);
 
@@ -93,6 +94,8 @@ export default function MinhasDenunciasScreen() {
         })}
       </ScrollView>
 
+
+      {offline && cachedAt ? <OfflineBanner cachedAt={cachedAt} /> : null}
 
       <FlatList
         data={filtered}

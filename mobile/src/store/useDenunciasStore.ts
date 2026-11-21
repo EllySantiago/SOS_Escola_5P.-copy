@@ -1,13 +1,20 @@
 import { create } from 'zustand';
 import { denunciasAPI } from '@/services/denunciaService';
 import { notificarMudancaStatus } from '@/services/notifications';
+import { lerCache, salvarCache } from '@/services/cacheService';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { ApiResponse, Denuncia, DenunciaFiltros, PaginatedResponse } from '@/types';
+
+type ListaEmCache = { items: Denuncia[]; total?: number };
 
 interface DenunciasState {
   denuncias: Denuncia[];
   loading: boolean;
   error: string | null;
+  /** true quando a lista exibida veio do cache local porque a API não respondeu. */
+  offline: boolean;
+  /** Quando o cache exibido foi salvo (milissegundos). */
+  cachedAt: number | null;
   page: number;
   limit: number;
   total?: number;
@@ -29,6 +36,8 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
   denuncias: [],
   loading: false,
   error: null,
+  offline: false,
+  cachedAt: null,
   page: 1,
   limit: 50,
   total: undefined,
@@ -57,20 +66,33 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const currentUser = useAuthStore.getState().user;
-      const response = currentUser?.role === 'DENUNCIANTE'
+      const ehDenunciante = currentUser?.role === 'DENUNCIANTE';
+      const chaveCache = `denuncias:${currentUser?.role ?? 'anonimo'}:${currentUser?.id ?? 0}:${page}:${limit}:${JSON.stringify(filtros)}`;
+
+      const response = ehDenunciante
         ? await denunciasAPI.listarMinhas(page, limit)
         : await denunciasAPI.listarTodas(page, limit, filtros);
+
+      // Junta as opções de filtro já vistas com as da lista atual.
+      const unir = (a: string[], b: string[]) =>
+        Array.from(new Set([...a, ...b.filter(Boolean)])).sort();
+      const opcoesCom = (items: Denuncia[]) => ({
+        tipos: unir(get().opcoes.tipos, items.map((d) => d.tipoDenuncia)),
+        bairros: unir(get().opcoes.bairros, items.map((d) => d.bairroOcorrencia)),
+      });
 
       if (response.success && response.data) {
         const paginatedData = response.data as PaginatedResponse<Denuncia>;
         const items = Array.isArray(paginatedData)
           ? paginatedData
           : (paginatedData.data || []);
+        const total = !Array.isArray(paginatedData) && paginatedData.meta
+          ? paginatedData.meta.total
+          : undefined;
 
         // notifica o usuário quando a situação de uma denúncia dele mudou
         const anteriores = new Map(get().denuncias.map((d) => [d.id, d.situacao]));
-        const role = useAuthStore.getState().user?.role;
-        if (anteriores.size > 0 && role === 'DENUNCIANTE') {
+        if (anteriores.size > 0 && ehDenunciante) {
           items.forEach((d) => {
             const antes = anteriores.get(d.id);
             if (antes && antes !== d.situacao) {
@@ -79,26 +101,35 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
           });
         }
 
-        const opcoes = get().opcoes;
-        const unir = (a: string[], b: string[]) =>
-          Array.from(new Set([...a, ...b.filter(Boolean)])).sort();
-
-        set({
-          denuncias: items,
-          opcoes: {
-            tipos: unir(opcoes.tipos, items.map((d) => d.tipoDenuncia)),
-            bairros: unir(opcoes.bairros, items.map((d) => d.bairroOcorrencia)),
-          },
-          loading: false,
-          total: !Array.isArray(paginatedData) && paginatedData.meta ? paginatedData.meta.total : undefined,
-        });
-      } else {
-        set({
-          error: response.error || 'Falha ao buscar denúncias',
-          denuncias: [],
-          loading: false,
-        });
+        set({ denuncias: items, opcoes: opcoesCom(items), loading: false, offline: false, cachedAt: null, total });
+        void salvarCache<ListaEmCache>(chaveCache, { items, total });
+        return;
       }
+
+      // Sem conexão: mostra a última lista salva em vez de uma tela vazia.
+      if (response.offline) {
+        const cache = await lerCache<ListaEmCache>(chaveCache);
+        if (cache) {
+          set({
+            denuncias: cache.dados.items,
+            opcoes: opcoesCom(cache.dados.items),
+            total: cache.dados.total,
+            loading: false,
+            offline: true,
+            cachedAt: cache.salvoEm,
+            error: null,
+          });
+          return;
+        }
+      }
+
+      set({
+        error: response.error || 'Falha ao buscar denúncias',
+        denuncias: [],
+        loading: false,
+        offline: !!response.offline,
+        cachedAt: null,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       set({ error: message, denuncias: [], loading: false });
@@ -164,3 +195,19 @@ export const useDenunciasStore = create<DenunciasState>((set, get) => ({
     }
   },
 }));
+
+// Ao sair da conta (logout ou sessão expirada), a lista em memória não pode ficar para o próximo usuário.
+useAuthStore.subscribe((state, anterior) => {
+  if (anterior.user && !state.user) {
+    useDenunciasStore.setState({
+      denuncias: [],
+      error: null,
+      offline: false,
+      cachedAt: null,
+      total: undefined,
+      filtros: {},
+      opcoes: { tipos: [], bairros: [] },
+      page: 1,
+    });
+  }
+});

@@ -1,13 +1,14 @@
 import { Text, TextInput, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/theme';
+import type { GestorErrors } from '@/utils/validation';
 
 interface GestorFormFieldsProps {
   nome: string;
   email: string;
   senha: string;
   showSenha: boolean;
-  errors: Record<string, string>;
+  errors: GestorErrors;
   onNomeChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onSenhaChange: (value: string) => void;

@@ -20,6 +20,7 @@ import EmptyState from '@/components/feedback/EmptyState';
 import ErrorState from '@/components/feedback/ErrorState';
 import LoadingState from '@/components/feedback/LoadingState';
 import GestorFormFields from '@/components/gestor/GestorFormFields';
+import { hasErrors, validarGestor, type GestorErrors } from '@/utils/validation';
 
 export default function GestoresScreen() {
   const { gestores, loading, error, listar, criar, excluir } = useGestores();
@@ -30,15 +31,12 @@ export default function GestoresScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<GestorErrors>({});
 
   const validate = () => {
-    const e: Record<string, string> = {};
-    if (!nome.trim()) e.nome = 'Nome obrigatório';
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) e.email = 'E-mail inválido';
-    if (!senha.trim() || senha.length < 6) e.senha = 'Mínimo 6 caracteres';
+    const e = validarGestor({ nome, email, senha });
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return !hasErrors(e);
   };
 
   const handleCreate = async () => {

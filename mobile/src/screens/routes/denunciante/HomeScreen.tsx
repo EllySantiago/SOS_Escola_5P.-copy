@@ -16,13 +16,14 @@ import DenunciaCard from '@/components/denuncia/DenunciaCard';
 import TipoIcon from '@/components/denuncia/TipoIcon';
 import EmptyState from '@/components/feedback/EmptyState';
 import ErrorState from '@/components/feedback/ErrorState';
+import OfflineBanner from '@/components/feedback/OfflineBanner';
 import LoadingState from '@/components/feedback/LoadingState';
 import { colors } from '@/constants/theme';
 
 export default function HomeDenuncianteScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { denuncias, loading, error, fetchDenuncias } = useDenunciasStore();
+  const { denuncias, loading, error, offline, cachedAt, fetchDenuncias } = useDenunciasStore();
 
   useEffect(() => {
     fetchDenuncias();
@@ -104,6 +105,7 @@ export default function HomeDenuncianteScreen() {
             </TouchableOpacity>
           </View>
 
+          {offline && cachedAt ? <OfflineBanner cachedAt={cachedAt} style={{ marginHorizontal: 0 }} /> : null}
           {error ? (
             <ErrorState
               title="Erro ao carregar denúncias"

@@ -2,10 +2,14 @@ import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
+import { useAuthHydrated } from '@/hooks/useSessao';
+import LoadingState from '@/components/feedback/LoadingState';
 
 export default function DenuncianteLayout() {
+  const hydrated = useAuthHydrated();
   const redirect = useRoleGuard('DENUNCIANTE');
   const insets = useSafeAreaInsets();
+  if (!hydrated) return <LoadingState message="Carregando..." />;
   if (redirect) return <Redirect href={redirect} />;
 
   return (

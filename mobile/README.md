@@ -64,14 +64,15 @@ docker compose up --build -d db redis api
 
 O Compose aguarda o Postgres e o Redis, aplica as migrations e cria as duas contas de gestor de teste automaticamente. Nao precisa preencher `backend/.env`. Para verificar a API, abra `http://localhost:8000/health`; para conferir os logs, use `docker compose logs -f api`.
 
-Para testar somente a interface no navegador, rode `npm run web` na pasta `mobile/`. Para usar o app em um celular com a API local, crie/edite `mobile/.env` e informe o IP local do computador:
+Para testar somente a interface no navegador, rode `npm run web` na pasta `mobile/`. Para usar o app em um celular com a API local, abra um terminal na pasta `mobile/`, crie/edite `.env` e informe o IPv4 da interface Wi-Fi do computador:
 
 ```powershell
+Set-Location mobile
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 notepad .env
 ```
 
-Configure `EXPO_PUBLIC_API_URL=http://<IP-DO-COMPUTADOR>:8000`. Descubra o IP com `ipconfig`; computador e telefone precisam estar na mesma rede e o firewall deve permitir as portas 8081 e 8000. Teste `http://<IP-DO-COMPUTADOR>:8000/health` no navegador do telefone antes de abrir o app. No emulador Android, use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. `localhost` no telefone aponta para o proprio telefone.
+Configure `EXPO_PUBLIC_API_URL=http://<IP-DO-COMPUTADOR>:8000`. Descubra o IPv4 da interface Wi-Fi com `ipconfig`; nao use IP de WSL, Docker ou adaptador virtual, e lembre que o IP pode mudar ao reconectar a rede. Computador e telefone precisam estar na mesma rede e o firewall deve permitir as portas 8081 e 8000. Antes de abrir o app, teste `http://<IP-DO-COMPUTADOR>:8000/health` no navegador do telefone. Se aparecer `Network request failed` ou `Fetch request has been canceled`, confira essa URL e reinicie o Metro depois de alterar o `.env`. No emulador Android, use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. `localhost` no telefone aponta para o proprio telefone.
 
 Depois, em outro terminal, inicie o app:
 

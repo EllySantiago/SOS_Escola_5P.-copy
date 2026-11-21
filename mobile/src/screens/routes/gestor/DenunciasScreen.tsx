@@ -28,6 +28,7 @@ import StatusPicker from '@/components/denuncia/StatusPicker';
 import LoadingState from '@/components/feedback/LoadingState';
 import EmptyState from '@/components/feedback/EmptyState';
 import ErrorState from '@/components/feedback/ErrorState';
+import OfflineBanner from '@/components/feedback/OfflineBanner';
 
 export default function DenunciasGestorScreen() {
   const router = useRouter();
@@ -36,6 +37,8 @@ export default function DenunciasGestorScreen() {
     denuncias,
     loading,
     error,
+    offline,
+    cachedAt,
     fetchDenuncias,
     updateDenuncia,
     filtros,
@@ -130,6 +133,8 @@ export default function DenunciasGestorScreen() {
       </View>
 
       <FiltroBar filtros={filtros} opcoes={opcoes} onChange={setFiltros} />
+
+      {offline && cachedAt ? <OfflineBanner cachedAt={cachedAt} /> : null}
 
       <FlatList
         data={filtered}

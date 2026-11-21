@@ -2,9 +2,9 @@
 
 **Branch:** `refatoracao`
 
-**Commit de referência:** `c6f80fea4d2c9c15d00c4e27d43b4618fe93c13a` (`atualização de mobile`)
+**Commit de referência:** _preencher com o hash do commit depois do push_
 
-**Última verificação:** 19/11/2026
+**Última verificação:** 20/11/2026
 
 **Legenda:** `[x]` = há implementação ou configuração comprovada; `[ ]` = não comprovado neste repositório.
 
@@ -198,57 +198,61 @@
 
 ## Acompanhamento 20/11 - Atualizações, offline e revisão
 
-### [ ] Atualizações OTA com expo-updates
+> **Como validar tudo abaixo:** estas mudanças foram escritas sem executar o app. Antes de entregar, rode `npm install` em `mobile/` (atualiza o `package-lock.json`), `npx tsc --noEmit` e teste no emulador. Os itens marcados "a validar" dependem disso.
 
-- **Status:** Não feito
-- **Evidência:** [mobile/app.json](./app.json:20-22) declara `"updates": { "enabled": false }`. Não foi encontrada a dependência `expo-updates` no [mobile/package.json](./package.json).
-- **O que falta:** habilitar updates, instalar/configurar `expo-updates` e executar publicação para um canal EAS.
+### [x] Atualizações OTA com expo-updates
 
-### [ ] Modo offline básico
+- **Status:** Configurado. **A validar:** publicar um update e vê-lo chegar em um build.
+- **Evidência:** `expo-updates` em [mobile/package.json](./package.json); `updates` (`enabled`, `url` do projeto EAS, `checkAutomatically: ON_LOAD`) e `runtimeVersion` (`policy: appVersion`) em [mobile/app.json](./app.json); um `channel` por perfil de build (`development`, `preview`, `production`) em [mobile/eas.json](./eas.json); hook [mobile/src/hooks/useAtualizacaoOTA.ts](./src/hooks/useAtualizacaoOTA.ts), chamado no layout raiz, que procura, baixa e avisa o usuário (toque para reiniciar).
+- **Como publicar:** `npm run update:preview -- "mensagem"` (ou `update:production`). O build precisa ter sido gerado depois desta configuração e o `runtimeVersion` do update precisa ser igual ao do build.
+- **Limites:** não funciona no Expo Go nem em modo de desenvolvimento (o hook se desliga sozinho). Mudanças em código nativo ou em dependências nativas exigem novo build, não OTA.
 
-- **Status:** Não feito
-- **Evidência:** não foi encontrada persistência de lista de denúncias ou fila de criação offline.
-- **O que falta:** detectar ausência de rede, persistir dados essenciais no AsyncStorage e definir a sincronização quando voltar a conexão.
+### [x] Modo offline básico
 
-### [ ] Cache com AsyncStorage
+- **Status:** Feito (leitura). **A validar:** testar no aparelho em modo avião.
+- **Evidência:** o cliente HTTP ([mobile/src/services/http.ts](./src/services/http.ts)) identifica falta de rede e tempo esgotado (15 s) e devolve `offline: true`. A store ([mobile/src/store/useDenunciasStore.ts](./src/store/useDenunciasStore.ts)) então mostra a última lista salva e o componente [OfflineBanner](./src/components/feedback/OfflineBanner.tsx) avisa "Sem conexão" com a data dos dados. Aparece em Início, Minhas Denúncias e na lista do gestor.
+- **Sessão:** continua preservada pelo AsyncStorage; ao abrir o app, [useSessao.ts](./src/hooks/useSessao.ts) espera a restauração antes de decidir rotas e confere se o token ainda vale.
+- **Limite assumido:** só leitura. Criar ou alterar denúncia sem conexão mostra o erro "Sem conexão com a internet", não há fila para enviar depois.
 
-- **Status:** Parcial
-- **Evidência:** `@react-native-async-storage/async-storage` persiste o Zustand da autenticação em [mobile/src/store/useAuthStore.ts](./src/store/useAuthStore.ts:75-82). Esse cache grava `user` e `isAuthenticated`, mas não grava cache de conteúdo da API.
-- **O que falta:** cache de listas, denúncia selecionada ou fila offline. Não confundir persistência da sessão com cache offline de dados.
+### [x] Cache com AsyncStorage
+
+- **Status:** Feito. **A validar:** conferir que o cache some no logout.
+- **Evidência:** [mobile/src/services/cacheService.ts](./src/services/cacheService.ts) guarda o último resultado de cada consulta (chave por perfil, usuário, página e filtros) com a data. Além da sessão (Zustand `persist`), agora há cache de conteúdo da API.
+- **Segurança:** o AsyncStorage **não é criptografado** e o cache contém dados de denúncias. Por isso ele é apagado no logout e quando a sessão expira, e a lista em memória também é limpa. Risco aceito: enquanto a pessoa estiver logada, os dados ficam legíveis no aparelho.
 
 ### [x] Estados de loading
 
-- **Status:** Feito
-- **Evidência:** componentes em [mobile/src/components/feedback/LoadingState.tsx](./src/components/feedback/LoadingState.tsx), estados da store em [mobile/src/store/useDenunciasStore.ts](./src/store/useDenunciasStore.ts:27-33) e uso nas telas de denúncia e mapa.
+- **Status:** Feito.
+- **Evidência:** [LoadingState](./src/components/feedback/LoadingState.tsx) nas telas de lista, mapa e gestores, `loading` na store e nos hooks, e agora também ao abrir o app, enquanto a sessão salva é restaurada (layouts de `app/`).
 
 ### [x] Estados vazios e erros
 
-- **Status:** Feito
-- **Evidência:** [mobile/src/components/feedback/EmptyState.tsx](./src/components/feedback/EmptyState.tsx), [mobile/src/components/feedback/ErrorState.tsx](./src/components/feedback/ErrorState.tsx) e uso em telas de gestor e denunciante.
+- **Status:** Feito.
+- **Evidência:** [EmptyState](./src/components/feedback/EmptyState.tsx), [ErrorState](./src/components/feedback/ErrorState.tsx) com "Tentar novamente" e o aviso de offline.
 
 ### [x] Validação de formulários
 
-- **Status:** Feito
-- **Evidência:** login em [mobile/src/screens/routes/public/LoginScreen.tsx](./src/screens/routes/public/LoginScreen.tsx:29-35), cadastro em [mobile/src/screens/routes/public/RegisterScreen.tsx](./src/screens/routes/public/RegisterScreen.tsx:37-51) e denúncia em [mobile/src/hooks/useDenunciaForm.ts](./src/hooks/useDenunciaForm.ts:39-47).
-- **Regras comprovadas:** bairro obrigatório e descrição com pelo menos 10 caracteres no formulário atual; as regras antigas de 20 caracteres não são usadas pelo fluxo ativo.
+- **Status:** Feito.
+- **Evidência:** todas as regras estão em [mobile/src/utils/validation.ts](./src/utils/validation.ts) (login, cadastro, gestor e denúncia). As quatro telas chamam essas funções, sem regex nem mensagens repetidas. As mensagens foram mantidas iguais às anteriores, então os fluxos de teste não mudam.
+- **Pequena mudança de regra:** a descrição da denúncia agora conta o tamanho depois de remover espaços nas pontas (mínimo de 10 caracteres).
 
 ### [x] Tratamento de erros da API
 
-- **Status:** Feito
-- **Evidência:** normalização de erro em [mobile/src/services/http.ts](./src/services/http.ts:26-36), `error` na store em [mobile/src/store/useDenunciasStore.ts](./src/store/useDenunciasStore.ts:90-104) e componentes `ErrorState` nas telas.
+- **Status:** Feito. **A validar:** forçar token vencido e ver a volta ao login.
+- **Evidência:** [mobile/src/services/http.ts](./src/services/http.ts) e [mobile/src/utils/apiErrors.ts](./src/utils/apiErrors.ts): tempo limite de 15 s; mensagens em português para falta de rede, timeout, 5xx, "credenciais inválidas" e resposta inválida; o login mostra a mensagem real em vez de um texto fixo.
+- **Sessão expirada:** 401, ou 403 com token vencido (o backend usa 403 para token vencido), encerra a sessão, limpa os dados locais e leva ao login com o aviso "Sessão expirada".
+- **Observação sobre o backend:** o `authenticate` devolve 403 para token inválido ou vencido; o correto seria 401. O app trata os dois casos, mas vale corrigir no backend.
 
 ### [x] Revisão da arquitetura sem duplicação
 
-- **Status:** Feito
-- **Evidência positiva:** utilitários, componentes reutilizáveis, hooks e constants foram extraídos; a configuração de status, tipos e bairro está centralizada em `src/constants`.
-- **Evidência:** a cópia `mobile/mobile/` e os arquivos não utilizados da arquitetura antiga (`src/models/`, `src/navigation/`, `src/viewmodels/`, telas antigas e `App.tsx`) foram removidos. O fluxo mantido é o Expo Router em `mobile/app/`, com telas em `mobile/src/screens/routes/`. A API também não mantém wrappers de serviço duplicados: stores usam os clientes em `src/services/`.
+- **Status:** Feito.
+- **Evidência:** validação unificada em `utils/validation.ts` (antes: regex copiado em 3 telas); erros da API em `utils/apiErrors.ts`; cache em `services/cacheService.ts`; hooks de sessão e OTA em `hooks/`. Dependências sem uso removidas: `zod`, `react-hook-form`, `@hookform/resolvers`, `victory-native` e `react-native-svg`.
+- **Camadas:** rotas (`app/`) → telas (`src/screens`) → componentes → hooks → stores → serviços → tipos/constantes, sem dependência circular (o cliente HTTP recebe a ação de "sessão expirada" por registro, em vez de importar a store).
 
-### [x] TypeScript do projeto
+### [ ] TypeScript do projeto
 
-- **Status:** Feito
-- **Evidência:** `npx tsc --noEmit` foi executado na raiz ativa `mobile/` e passou nesta revisão.
+- **Status:** A revalidar. O `npx tsc --noEmit` anterior passou antes destas mudanças. Rode de novo depois do `npm install`.
 
 ### [x] Instruções para executar no Expo Go
 
-- **Status:** Feito
-- **Evidência:** o comando `npm run start:go` inicia o Metro em modo Expo Go pela rede local; as instruções para configurar `EXPO_PUBLIC_API_URL` em celular físico estão em [mobile/README.md](./README.md).
+- **Status:** Feito, com ressalva. O comando `npm run start:go` continua válido para desenvolvimento, mas OTA, notificações e outros recursos nativos exigem um build de desenvolvimento ou de preview, e o Expo Go do SDK 58 pode ainda não estar disponível nas lojas.

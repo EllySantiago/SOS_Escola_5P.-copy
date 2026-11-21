@@ -3,8 +3,7 @@ import Toast from 'react-native-toast-message';
 import { SITUACAO_INICIAL } from '@/constants';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useDenunciasStore } from '@/store/useDenunciasStore';
-
-type DenunciaFormErrors = Partial<Record<'tipo' | 'bairro' | 'descricao', string>>;
+import { hasErrors, validarDenuncia, type DenunciaErrors } from '@/utils/validation';
 
 export function useDenunciaForm() {
   const { user } = useAuthStore();
@@ -19,7 +18,7 @@ export function useDenunciaForm() {
   const [submitting, setSubmitting] = useState(false);
   const [protocolo, setProtocolo] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [errors, setErrors] = useState<DenunciaFormErrors>({});
+  const [errors, setErrors] = useState<DenunciaErrors>({});
 
   const changeTipo = (value: string) => {
     setTipoDenuncia(value);
@@ -37,14 +36,9 @@ export function useDenunciaForm() {
   };
 
   const validate = () => {
-    const validationErrors: DenunciaFormErrors = {};
-    if (!tipoDenuncia) validationErrors.tipo = 'Selecione um tipo';
-    if (!bairro.trim()) validationErrors.bairro = 'Selecione o bairro';
-    if (!descricao.trim() || descricao.length < 10) {
-      validationErrors.descricao = 'Descreva com ao menos 10 caracteres';
-    }
+    const validationErrors = validarDenuncia({ tipoDenuncia, bairro, descricao });
     setErrors(validationErrors);
-    return Object.keys(validationErrors).length === 0;
+    return !hasErrors(validationErrors);
   };
 
   const submit = async () => {
@@ -74,7 +68,11 @@ export function useDenunciaForm() {
         setImagens([]);
         setIdentificacao(false);
       } else {
-        Toast.show({ type: 'error', text1: 'Erro', text2: 'Não foi possível registrar a denúncia.' });
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: useDenunciasStore.getState().error || 'Não foi possível registrar a denúncia.',
+        });
       }
     } finally {
       setSubmitting(false);

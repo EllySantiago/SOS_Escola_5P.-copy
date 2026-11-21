@@ -2,8 +2,12 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
 import { authAPI } from '@/services/authService';
+import { setSessionExpiredHandler } from '@/services/http';
+import { limparCache } from '@/services/cacheService';
 import { AUTH_TOKEN_KEY, USER_ROLE_KEY } from '@/constants/config';
+import { MSG_SESSAO_EXPIRADA, tokenExpirado } from '@/utils/apiErrors';
 import type { AuthUser } from '@/types';
 
 export type { AuthUser } from '@/types';
@@ -18,12 +22,23 @@ interface AuthState {
     acceptedLegal: boolean,
   ) => Promise<{ success: boolean; role?: string; error?: string }>;
   logout: () => Promise<void>;
+  /** Encerra a sessão localmente (token vencido ou recusado pela API) e avisa o usuário. */
+  expireSession: () => Promise<void>;
+  /** Confere se a sessão restaurada do AsyncStorage ainda tem um token válido. */
+  checkSession: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
+}
+
+async function limparDadosLocais() {
+  await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+  await SecureStore.deleteItemAsync(USER_ROLE_KEY);
+  // O cache guarda denúncias (dados pessoais) e não pode sobreviver ao logout.
+  await limparCache();
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -47,7 +62,6 @@ export const useAuthStore = create<AuthState>()(
               id: Number(response.data.user.id),
             };
 
-
             await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.data.token);
             await SecureStore.setItemAsync(USER_ROLE_KEY, mappedRole);
 
@@ -70,9 +84,23 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout API error:', error);
         }
-        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-        await SecureStore.deleteItemAsync(USER_ROLE_KEY);
+        await limparDadosLocais();
         set({ user: null, isAuthenticated: false });
+      },
+
+      expireSession: async () => {
+        if (!get().isAuthenticated) return; // várias chamadas podem falhar juntas: avisa uma vez só
+        await limparDadosLocais();
+        set({ user: null, isAuthenticated: false });
+        Toast.show({ type: 'info', text1: 'Sessão expirada', text2: MSG_SESSAO_EXPIRADA });
+      },
+
+      checkSession: async () => {
+        if (!get().isAuthenticated) return;
+        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+        if (!token || tokenExpirado(token)) {
+          await get().expireSession();
+        }
       },
     }),
     {
@@ -82,3 +110,8 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Quando qualquer chamada à API descobre que a sessão não vale mais, volta para o login.
+setSessionExpiredHandler(() => {
+  void useAuthStore.getState().expireSession();
+});

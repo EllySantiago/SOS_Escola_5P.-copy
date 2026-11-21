@@ -17,6 +17,7 @@ import Button from '@/components/ui/Button';
 import TextField from '@/components/ui/TextField';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import ConsentAgreement from '@/components/ui/ConsentAgreement';
+import { hasErrors, validarLogin, type LoginErrors } from '@/utils/validation';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -26,17 +27,12 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedLegal, setAcceptedLegal] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; legal?: string }>({});
+  const [errors, setErrors] = useState<LoginErrors>({});
 
   const validate = () => {
-    const newErrors: typeof errors = {};
-    if (!email.trim()) newErrors.email = 'E-mail obrigatório';
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'E-mail inválido';
-    if (!password.trim()) newErrors.password = 'Senha obrigatória';
-    else if (password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
-    if (!acceptedLegal) newErrors.legal = 'Confirme a leitura e aceite os documentos para continuar.';
+    const newErrors = validarLogin({ email, password, acceptedLegal });
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return !hasErrors(newErrors);
   };
 
   const handleLogin = async () => {
@@ -52,7 +48,7 @@ export default function LoginScreen() {
         router.replace('/home');
       }
     } else {
-      Toast.show({ type: 'error', text1: 'Erro ao entrar', text2: 'Verifique suas credenciais' });
+      Toast.show({ type: 'error', text1: 'Erro ao entrar', text2: result.error || 'Verifique suas credenciais' });
     }
   };
 

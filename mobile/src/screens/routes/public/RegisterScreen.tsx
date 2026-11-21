@@ -17,6 +17,7 @@ import Button from '@/components/ui/Button';
 import TextField from '@/components/ui/TextField';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import ConsentAgreement from '@/components/ui/ConsentAgreement';
+import { hasErrors, validarCadastro, type CadastroErrors } from '@/utils/validation';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -29,27 +30,12 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedLegal, setAcceptedLegal] = useState(false);
-  const [errors, setErrors] = useState<{
-    name?: string;
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-    legal?: string;
-  }>({});
+  const [errors, setErrors] = useState<CadastroErrors>({});
 
   const validate = () => {
-    const newErrors: typeof errors = {};
-    if (!name.trim()) newErrors.name = 'Nome completo é obrigatório';
-    if (!email.trim()) newErrors.email = 'E-mail obrigatório';
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'E-mail inválido';
-    if (!password.trim()) newErrors.password = 'Senha obrigatória';
-    else if (password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'As senhas não coincidem';
-    }
-    if (!acceptedLegal) newErrors.legal = 'Confirme a leitura e aceite os documentos para continuar.';
+    const newErrors = validarCadastro({ name, email, password, confirmPassword, acceptedLegal });
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return !hasErrors(newErrors);
   };
 
   const handleRegister = async () => {

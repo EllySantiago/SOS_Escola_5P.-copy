@@ -1,17 +1,17 @@
 # Backlog de testes do app mobile (S.O.S Cidade)
 
-Estado verificado em 19/11/2026: o app (`mobile/`, Expo SDK 58 + React Native) **não tem testes automatizados próprios**. A pasta `mobile/testes/` contém somente planejamento; não existe `mobile/.maestro/`, workflow `mobile-e2e`, scripts Maestro ou Jest mobile. Os testes executáveis do backend/API ficam em `backend/tests/` e `tests/`; os fluxos Playwright ficam em `e2e/tests/`.
+Estado atualizado em 24/11/2026: o app (`mobile/`, Expo SDK 58 + React Native) tem uma suíte unitária Jest com `jest-expo`, executada pelo workflow `unit-api`. A pasta `mobile/testes/` contém o planejamento; ainda não há fluxos Maestro nem workflow de teste nativo. A cobertura de cada item abaixo é computada pelas linhas marcadas `✅`.
 
-**Legenda.** Tipo: **Smoke** (fluxo crítico), **E2E** (fluxo completo), **Unit** (função isolada), **Seg** (segurança). Status 🔲 significa que o teste ainda precisa ser implementado e executado. Prioridade segue a política do plano de testes da equipe.
+**Legenda.** Tipo: **Smoke** (fluxo crítico), **E2E** (fluxo completo), **Unit** (função isolada), **Seg** (segurança). Status ✅ significa coberto por teste automatizado; 🔲 significa que ainda falta implementar ou executar a cobertura completa. Prioridade segue a política do plano de testes da equipe.
 
 ## Decisões de ferramenta
 
 | Camada | Ferramenta | Por quê |
 |---|---|---|
-| E2E e smoke | **Maestro (proposta)** | Fluxos YAML a criar e calibrar num emulador Android; ainda não há testes mobile implementados |
+| E2E e smoke | **Maestro (proposta)** | Fluxos YAML a criar e calibrar num emulador Android; ainda não há E2E nativo Maestro |
 | Unitários | Jest + `jest-expo` | Padrão do Expo. Testa regras de validação e stores sem emulador |
 
-**Maestro é difícil?** O fluxo em si é a parte fácil: cada passo é uma linha (`tapOn`, `inputText`, `assertVisible`). A parte trabalhosa é o **ambiente**: o emulador no CI, o build do app e o app falando com o backend. Essa infraestrutura ainda não existe neste repositório; M-00 deve começar por configurá-la e executar o primeiro fluxo.
+**Maestro é difícil?** O fluxo em si é a parte fácil: cada passo é uma linha (`tapOn`, `inputText`, `assertVisible`). A parte trabalhosa é o **ambiente**: o emulador no CI, o build do app e o app falando com o backend. Essa infraestrutura ainda não existe neste repositório; M-00 deve começar por configurá-la e executar o primeiro fluxo nativo.
 
 ## Fase 0: infraestrutura
 
@@ -22,7 +22,7 @@ Estado verificado em 19/11/2026: o app (`mobile/`, Expo SDK 58 + React Native) *
 | M-02 | Subflows reutilizáveis (abrir app, cadastrar e logar, logar gestor, criar denúncia) | E2E | Alta | 🔲 |
 | M-03 | Workflow `mobile-e2e` (emulador Android, backend local, Metro) | E2E | Alta | 🔲 |
 | M-04 | Tornar `mobile-e2e` check obrigatório da `main` depois de 10 execuções verdes seguidas | E2E | Média | 🔲 |
-| M-05 | Configurar Jest com `jest-expo` e script `npm test` no `mobile/` | Unit | Alta | 🔲 |
+| M-05 | Configurar Jest com `jest-expo` e script `npm test` no `mobile/` | Unit | Alta | ✅ |
 
 ## Fase 1: smoke (3 fluxos, roda em PR que mexe em `mobile/`)
 
@@ -58,10 +58,10 @@ Estado verificado em 19/11/2026: o app (`mobile/`, Expo SDK 58 + React Native) *
 
 | ID | O que testar | Onde | Prioridade | Status |
 |---|---|---|---|---|
-| MU-01 | Validação de login (e-mail e senha) | `app/(public)/login.tsx` (extrair a função) | Média | 🔲 |
-| MU-02 | Validação de cadastro (nome, e-mail, senha, confirmação) | `app/(public)/register.tsx` | Média | 🔲 |
+| MU-01 | Validação de login (e-mail e senha) | `app/(public)/login.tsx` (extrair a função) | Média | ✅ |
+| MU-02 | Validação de cadastro (nome, e-mail, senha, confirmação) | `app/(public)/register.tsx` | Média | ✅ |
 | MU-03 | `apiCall`: envia o header `Authorization`, trata erro e resposta vazia | `src/lib/api.ts` | Alta | 🔲 |
-| MU-04 | `useAuthStore`: login guarda o token, logout apaga | `src/store/useAuthStore.ts` | Alta | 🔲 |
+| MU-04 | `useAuthStore`: login guarda o token, logout apaga | `src/store/useAuthStore.ts` | Alta | ✅ |
 | MU-05 | `useDenunciasStore`: criar, listar, filtrar | `src/store/useDenunciasStore.ts` | Média | 🔲 |
 
 ## Fase 4: segurança do app
@@ -69,8 +69,8 @@ Estado verificado em 19/11/2026: o app (`mobile/`, Expo SDK 58 + React Native) *
 | ID | Verificação | Tipo | Prioridade | Status |
 |---|---|---|---|---|
 | MX-01 | Denunciante comum não vê as telas do gestor | Seg / Smoke | Alta | 🔲 |
-| MX-02 | O token fica no `expo-secure-store`, nunca em `AsyncStorage` | Seg / Unit | Alta | 🔲 |
-| MX-03 | Logout apaga o token do armazenamento seguro | Seg / Unit | Alta | 🔲 |
+| MX-02 | O token fica no `expo-secure-store`, nunca em `AsyncStorage` | Seg / Unit | Alta | ✅ |
+| MX-03 | Logout apaga o token do armazenamento seguro | Seg / Unit | Alta | ✅ |
 | MX-04 | A API rejeita token adulterado; falta validar expiração e retorno ao login | Seg / E2E | Alta | 🔲 |
 | MX-05 | O app em produção só fala HTTPS (as URLs do `eas.json` são HTTPS; conferir que não sobra `http://` no código) | Seg | Média | 🔲 |
 | MX-06 | Nenhuma senha ou token aparece em log do app | Seg | Média | 🔲 |

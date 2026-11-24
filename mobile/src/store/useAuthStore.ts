@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import Toast from 'react-native-toast-message';
 import { authAPI } from '@/services/authService';
 import { setSessionExpiredHandler } from '@/services/http';
 import { limparCache } from '@/services/cacheService';
+import * as secureStorage from '@/services/secureStorage';
 import { AUTH_TOKEN_KEY, USER_ROLE_KEY } from '@/constants/config';
 import { MSG_SESSAO_EXPIRADA, tokenExpirado } from '@/utils/apiErrors';
 import type { AuthUser } from '@/types';
@@ -30,11 +30,13 @@ interface AuthState {
 }
 
 async function limparDadosLocais() {
-  await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-  await SecureStore.deleteItemAsync(USER_ROLE_KEY);
+  await secureStorage.deleteItemAsync(AUTH_TOKEN_KEY);
+  await secureStorage.deleteItemAsync(USER_ROLE_KEY);
   // O cache guarda denúncias (dados pessoais) e não pode sobreviver ao logout.
   await limparCache();
 }
+
+let encerrandoSessao = false;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -62,8 +64,8 @@ export const useAuthStore = create<AuthState>()(
               id: Number(response.data.user.id),
             };
 
-            await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.data.token);
-            await SecureStore.setItemAsync(USER_ROLE_KEY, mappedRole);
+            await secureStorage.setItemAsync(AUTH_TOKEN_KEY, response.data.token);
+            await secureStorage.setItemAsync(USER_ROLE_KEY, mappedRole);
 
             set({ user: userData, isAuthenticated: true, isLoading: false });
             return { success: true, role: mappedRole };
@@ -89,15 +91,20 @@ export const useAuthStore = create<AuthState>()(
       },
 
       expireSession: async () => {
-        if (!get().isAuthenticated) return; // várias chamadas podem falhar juntas: avisa uma vez só
-        await limparDadosLocais();
-        set({ user: null, isAuthenticated: false });
-        Toast.show({ type: 'info', text1: 'Sessão expirada', text2: MSG_SESSAO_EXPIRADA });
+        if (!get().isAuthenticated || encerrandoSessao) return;
+        encerrandoSessao = true;
+        try {
+          await limparDadosLocais();
+          set({ user: null, isAuthenticated: false });
+          Toast.show({ type: 'info', text1: 'Sessão expirada', text2: MSG_SESSAO_EXPIRADA });
+        } finally {
+          encerrandoSessao = false;
+        }
       },
 
       checkSession: async () => {
         if (!get().isAuthenticated) return;
-        const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+        const token = await secureStorage.getItemAsync(AUTH_TOKEN_KEY);
         if (!token || tokenExpirado(token)) {
           await get().expireSession();
         }

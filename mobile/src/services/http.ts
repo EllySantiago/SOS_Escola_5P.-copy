@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL, AUTH_TOKEN_KEY } from '@/constants/config';
+import * as secureStorage from '@/services/secureStorage';
 import type { ApiResponse } from '@/types';
 import {
   MSG_OFFLINE,
@@ -31,7 +31,7 @@ export async function apiRequest<T>(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const token = authenticated ? await SecureStore.getItemAsync(AUTH_TOKEN_KEY) : null;
+    const token = authenticated ? await secureStorage.getItemAsync(AUTH_TOKEN_KEY) : null;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(requestOptions.headers as Record<string, string>),

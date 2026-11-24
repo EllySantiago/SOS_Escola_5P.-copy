@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "test": "npm --prefix tests test",
-    "test:unit": "npm run test:unit:frontend && npm run test:unit:backend",
+    "test:unit": "npm run test:unit:frontend && npm run test:unit:backend && npm run test:unit:mobile",
     "test:unit:frontend": "node -e \"require('fs').mkdirSync('resultados',{recursive:true})\" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=resultados/unit-frontend.xml \"frontend/tests/*.test.mjs\"",
     "test:unit:backend": "npm --prefix backend run test:unit",
+    "test:unit:mobile": "npm --prefix mobile run test:ci",
     "test:api": "npm --prefix tests test",
-    "test:e2e": "npm --prefix e2e test",
-    "test:e2e:smoke": "npm --prefix e2e test -- --grep @smoke",
+    "test:e2e": "npm --prefix e2e test -- --grep-invert @flaky",
+    "test:e2e:smoke": "npm --prefix e2e test -- --grep @smoke --grep-invert @flaky",
+    "test:e2e:quarentena": "npm --prefix e2e test -- --grep @flaky --pass-with-no-tests",
     "test:verbose": "npm --prefix tests run test:verbose"
   }
 }

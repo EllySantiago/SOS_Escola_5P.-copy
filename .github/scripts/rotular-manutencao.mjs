@@ -47,6 +47,14 @@ export function planejar(corpo, atuais) {
   return { adicionar, remover };
 }
 
+export function obterNumeroIssue(evento) {
+  const numero = Number(evento.issue?.number ?? evento.inputs?.issue_number);
+  if (!Number.isSafeInteger(numero) || numero < 1) {
+    throw new Error('Informe um número de issue válido para executar a rotulagem manual.');
+  }
+  return numero;
+}
+
 async function api(metodo, caminho, corpo) {
   const r = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}${caminho}`, {
     method: metodo,
@@ -64,7 +72,11 @@ async function api(metodo, caminho, corpo) {
 async function main() {
   const evento = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   // Relê a issue na hora: o evento pode ser antigo se houve várias edições seguidas.
-  const issue = await api('GET', `/issues/${evento.issue.number}`);
+  const issueNumber = obterNumeroIssue(evento);
+  const issue = await api('GET', `/issues/${issueNumber}`);
+  if (!Array.isArray(issue.labels)) {
+    throw new Error(`Não foi possível carregar a issue #${issueNumber}.`);
+  }
   const plano = planejar(issue.body, issue.labels.map((l) => l.name));
   if (!plano) return console.log('Issue fora do formulário de manutenção: nada a fazer.');
 

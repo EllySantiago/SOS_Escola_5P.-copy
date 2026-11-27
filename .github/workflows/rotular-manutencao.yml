@@ -4,18 +4,24 @@ name: rotular-manutencao
 on:
   issues:
     types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Número da issue de manutenção que deve ser rotulada
+        required: true
+        type: number
 
 permissions:
   contents: read
   issues: write
 
 concurrency:
-  group: rotular-manutencao-${{ github.event.issue.number }}
+  group: rotular-manutencao-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   rotular:
-    if: contains(github.event.issue.body, '### Tipo de falha')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.body, '### Tipo de falha')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

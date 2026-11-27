@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { planejar } from './rotular-manutencao.mjs';
+import { obterNumeroIssue, planejar } from './rotular-manutencao.mjs';
 
 function corpo(suite) {
   return [
@@ -39,4 +39,12 @@ test('não altera mobile em issues sem o campo Suíte afetada', () => {
 
   assert.deepEqual(plano.adicionar, []);
   assert.deepEqual(plano.remover, []);
+});
+
+test('obtém o número da issue em execução manual', () => {
+  assert.equal(obterNumeroIssue({ inputs: { issue_number: '42' } }), 42);
+});
+
+test('rejeita execução manual sem número de issue válido', () => {
+  assert.throws(() => obterNumeroIssue({ inputs: { issue_number: '0' } }), /número de issue válido/);
 });

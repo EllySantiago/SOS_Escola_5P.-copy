@@ -55,6 +55,5 @@ Não é possível afirmar conformidade completa com a LGPD ou prontidão para pr
 - [Índice dos documentos mobile](mobile/docs/README.md)
 - [Backlog de testes mobile](mobile/docs/testes/backlog-testes-mobile.md)
 - [Quality gate e execução manual](mobile/docs/testes/quality-gate.md)
-- [Guia de integração e commits para Kayky](mobile/docs/integracao/INTEGRACAO-KAYKY.md)
 - [Resumo de arquitetura e segurança](RESUMO-ARQUITETURA-SEGURANCA.md)
 - [Testes E2E](e2e/README.md)

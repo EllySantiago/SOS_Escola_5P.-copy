@@ -1,80 +1,74 @@
 # SOS-Cidade Mobile
 
-App mobile (React Native + Expo) do projeto SOS-Cidade, consumindo o mesmo backend já usado pela versão web (`frontend/`). Build restrito a Android e iOS — sem PWA/web (não há `react-native-web` nas dependências nem configuração `web` no `app.json`, de propósito).
+Aplicativo Expo/React Native para Android e iOS, com execução web configurada. O app usa a API do projeto; web não é PWA.
 
-## Arquitetura
+## Iniciar localmente
 
-| Camada | Pasta | Responsabilidade |
+Requisitos: Node.js/npm. Para usar cadastro, denúncias e painel, também é necessário Docker Desktop.
+
+```powershell
+# Na raiz do projeto
+docker compose up --build -d db redis api
+
+# Em outro terminal, dentro de mobile/
+npm install
+npm run start:go
+```
+
+O seed local cria estes usuários de teste:
+
+| Perfil | E-mail | Senha |
 |---|---|---|
-| **Rotas** | `app/` | Arquivos finos do Expo Router que apontam para as telas. |
-| **Telas** | `src/screens/routes/` | Componentes de página; concentram a composição da interface de cada fluxo. |
-| **Estado** | `src/store/` | Stores Zustand compartilhadas pelas telas. |
-| **Serviços** | `src/services/` e `src/lib/` | Comunicação com o backend e integrações nativas. |
+| Gestor | `gestor1.teste@soscidade.com` | `Teste@123` |
+| Gestor | `gestor2.teste@soscidade.com` | `Teste@123` |
+| Denunciante | `denunciante.teste@soscidade.com` | `Teste@123` |
 
-Novos elementos reutilizáveis devem ficar em `src/components/`, regras compartilhadas
-em `src/hooks/`, constantes em `src/constants/`, tipos em `src/types/` e funções
-auxiliares em `src/utils/`.
+Use essas contas e os dados seed somente em desenvolvimento. Para celular físico, configure `mobile/.env` com `EXPO_PUBLIC_API_URL=http://<IPv4-do-computador>:8000`. Em emulador Android use `http://10.0.2.2:8000`; `localhost` no telefone aponta para o próprio telefone. Para abrir a interface web, rode `npm run web`.
 
-Fluxo de uma ação (ex: fazer login):
+## O que o app oferece
 
-```
-Usuário aperta "Entrar" na LoginScreen (View)
-  -> o componente da tela chama a store de autenticação
-    -> a store usa o cliente de API para autenticar
-    -> a store guarda o token e atualiza o estado
-  -> a tela re-renderiza quando o estado da store muda
-```
+- **Denunciante:** cadastro, aceite de documentos, criação de denúncia com bairro/fotos e consulta das próprias ocorrências.
+- **Gestor:** lista, filtros, mapa/dashboard, atualização de situação e gestão de contas de gestor.
+- **Dispositivo:** localização em primeiro plano, seleção/captura de fotos e notificações locais.
 
-As rotas não devem conter interface nem regra de negócio. Quando um fluxo precisar
-de componentes ou hooks reutilizáveis, eles devem ser extraídos para as pastas
-correspondentes em `src/`.
+Não há notificação push remota nem automação de telas Android/iOS. Consulte o [acompanhamento de entrega](docs/entrega/ACOMPANHAMENTO.md) para limites e itens pendentes.
 
-## Autenticação: como funciona no mobile (diferente do navegador)
+## Como o app se relaciona com o backend
 
-A versão web usa cookie (`httpOnly`) pra guardar a sessão — isso não existe da mesma forma num app nativo. Por isso:
-
-1. O login manda usuário/senha pro backend, que responde com `{ user, token }`
-2. O app guarda esse `token` usando `expo-secure-store` (armazenamento criptografado do dispositivo — nunca usar `AsyncStorage` puro pra isso, ele não é criptografado)
-3. Toda requisição seguinte manda esse token no header `Authorization: Bearer <token>`
-4. O middleware do backend já aceita esse header (não precisou mudar nada no backend)
-
-## Como rodar
-
-1. Definir `EXPO_PUBLIC_API_URL` com o endereço do backend (não usar `localhost` em emulador/celular físico, pois aponta para o próprio aparelho)
-2. `npm install`
-3. `npx expo start`
-4. Escanear o QR code com o app **Expo Go** (Android/iOS) ou apertar `a`/`i` no terminal pra abrir num emulador
-
-## Integração e autorização
-
-- O cadastro público cria somente `DENUNCIANTE` e exige aceite explícito dos documentos legais.
-- A criação administrativa de gestores usa `POST /users/gestores`, protegido para usuários `GESTOR`; não confie em papéis enviados pelo cliente.
-- `POST /denuncias` aceita somente `DENUNCIANTE`. Token ausente, inválido ou expirado retorna `401`; usuário autenticado sem permissão retorna `403`.
-- As listas permitem filtrar por situação e por múltiplos tipos e bairros. Os filtros do denunciante também são enviados ao endpoint `/denuncias/minhas`.
-- A interface de gestores e a interface pública consomem os mesmos endpoints e contratos do Backend.
-
-## Testes automatizados
-
-Na pasta `mobile/`, rode a suíte unitária e de serviços:
-
-```powershell
-npm run test:ci
+```text
+Expo Router -> telas e hooks -> stores/serviços HTTP -> API Express -> PostgreSQL
+                                                       -> Redis (cache de consultas)
 ```
 
-Os testes de integração fazem chamadas reais dos serviços Mobile contra uma API local com banco descartável. Inicie o stack de desenvolvimento na raiz do repositório (`docker compose up --build -d db redis api`), configure a URL, a flag de segurança e as contas de teste criadas pelo seed, e execute:
+Rotas e navegação ficam em `app/`; código de interface e integração em `src/`. O app e o frontend web usam endpoints compartilhados. O backend é responsável por autenticação, perfil e autorização; guardar telas por perfil no app não substitui essa verificação.
 
-```powershell
-$env:EXPO_PUBLIC_API_URL = "http://localhost:8000"
-$env:MOBILE_INTEGRATION_TESTS = "1"
-$env:MOBILE_TEST_DENUNCIANTE_EMAIL = "denunciante.teste@soscidade.com"
-$env:MOBILE_TEST_DENUNCIANTE_PASSWORD = "Teste@123"
-$env:MOBILE_TEST_GESTOR_EMAIL = "gestor1.teste@soscidade.com"
-$env:MOBILE_TEST_GESTOR_PASSWORD = "Teste@123"
-npm run test:integration:backend
+Denúncias anônimas não exibem nome nem identificador da conta na resposta, mas permanecem relacionadas à conta no banco. Nome e descrição são criptografados no backend; imagens não recebem a mesma proteção.
+
+## Sessão, cache e segurança
+
+- Android/iOS guardam o token no SecureStore e o enviam como Bearer.
+- O estado básico de sessão persiste em AsyncStorage. Na versão web do app, o token também usa AsyncStorage, que não é equivalente ao SecureStore.
+- Listas de denúncias podem ser lidas offline a partir de cache AsyncStorage **sem criptografia**. Criar e alterar dados exige rede. A limpeza do cache no logout é tentada, mas pode falhar.
+- O site web armazena uma cópia JavaScript do token de sessão; o cookie `HttpOnly` do backend não protege essa cópia.
+- O backend neste checkout não valida transições de situação de denúncias em chamadas diretas.
+
+Esses limites impedem afirmar conformidade completa com a LGPD ou prontidão para produção. Veja o [resumo de arquitetura e segurança](../RESUMO-ARQUITETURA-SEGURANCA.md).
+
+## Testes
+
+Dentro de `mobile/`: `npm run test:ci` para Jest; `npm run test:integration:backend` para integração HTTP com backend local e banco descartável; `npx tsc --noEmit` para TypeScript.
+
+O workflow [`mobile-backend-integration.yml`](../.github/workflows/mobile-backend-integration.yml) roda manualmente e em PRs que alteram Mobile/Backend. Ele não abre emulador nem testa interface nativa.
+
+Documentação e gestão dos testes: [`docs/testes/`](docs/testes/README.md). O backlog é detalhado; os outros documentos estão limitados a 100 linhas.
+
+## Build Android
+
+Os perfis EAS `development`, `preview` e `production` estão configurados em `eas.json`. Para gerar um APK interno, após configurar a conta e API HTTPS:
+
+```sh
+eas login
+eas build -p android --profile preview
 ```
 
-O workflow [`mobile-backend-integration.yml`](../.github/workflows/mobile-backend-integration.yml) pode ser iniciado manualmente em **Actions → Mobile + Backend integration → Run workflow** e também roda em PRs que alteram Mobile ou Backend. A suite de integração é de API/serviços; não substitui testes de interface nativa em Android ou iOS.
-
-Os testes de integração aceitam somente `localhost` ou `127.0.0.1`, criam registros e tentam removê-los ao final. Nunca os execute contra produção nem contra um banco compartilhado. A última execução validada teve 45 testes unitários/de serviços e 10 cenários de integração.
-
-As coberturas atuais e o backlog restante estão em [`testes/backlog-testes-mobile.md`](./testes/backlog-testes-mobile.md). Fluxos Maestro, validação em emuladores e algumas situações offline continuam pendentes.
+Configuração não significa que o serviço ou um build já esteja publicado. Nunca use as credenciais ou chaves fixas do Compose em produção.

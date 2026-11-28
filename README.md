@@ -1,4 +1,8 @@
 # S.O.S. Cidade
+## Entrega final
+
+- **APK (Android):** [Baixar na pasta do Drive](https://drive.google.com/drive/folders/1tY17Ch1BLtt87c6OOn8fbTwHzvn1P_8y?usp=sharing)
+- **API (Render):** https://sos-cidade-api.onrender.com
 
 Sistema de registro e acompanhamento de denúncias urbanas, com foco em ocorrências de zeladoria na cidade do Recife. O cidadão registra uma ocorrência e pode acompanhar seu andamento; gestores consultam e atualizam os atendimentos conforme suas permissões.
 

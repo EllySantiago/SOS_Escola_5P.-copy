@@ -53,3 +53,7 @@ Os scripts de teste disponíveis estão descritos em [package.json](package.json
 ## Limites conhecidos
 
 A documentação técnica registra limitações encontradas no código desta cópia, inclusive sobre armazenamento local, notificações, proteção de dados e regras de transição de situação. Não interprete configuração de build, dependências instaladas ou testes automatizados como prova de publicação ou homologação. Consulte [RESUMO-ARQUITETURA-SEGURANCA.md](RESUMO-ARQUITETURA-SEGURANCA.md) e [mobile/docs/seguranca/seguranca-lgpd.md](mobile/docs/seguranca/seguranca-lgpd.md).
+
+## Link para download:
+APK:https://drive.google.com/drive/folders/1tY17Ch1BLtt87c6OOn8fbTwHzvn1P_8y?usp=sharing
+dentro tem o aplicativo, baixe com a permissão de baixar qualquer arquivo do navegador ativada

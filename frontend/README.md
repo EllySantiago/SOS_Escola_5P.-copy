@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# S.O.S. Cidade — frontend web
 
-## Getting Started
+Aplicação web do S.O.S. Cidade, construída com Next.js, React e TypeScript. O frontend atende os fluxos de cidadãos e gestores e consome a API do projeto.
 
-First, run the development server:
+## Requisitos
+
+- Node.js compatível com o projeto.
+- npm.
+- API do S.O.S. Cidade acessível (local ou publicada).
+
+## Configuração local
+
+Na pasta `frontend/`, copie `.env.example` para `.env.local`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure a URL da API:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Para executar junto com a infraestrutura Docker, prefira seguir o procedimento da raiz do repositório. O Compose já injeta `NEXT_PUBLIC_API_URL=http://localhost:8000` no serviço web.
 
-## Learn More
+## Instalação e execução independente
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Acesse `http://localhost:3000`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Build de produção
 
-## Deploy on Vercel
+```bash
+npm run lint
+npm run build
+npm run start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+O comando `start` serve o build já gerado. A variável `NEXT_PUBLIC_API_URL` é incorporada ao bundle durante o build; configure-a corretamente antes de compilar.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Principais áreas da aplicação
+
+- `/`: página pública inicial.
+- `/login`: autenticação.
+- `/(denunciante)/homepage-denunciante`: área do cidadão.
+- `/(denunciante)/nova-denuncia`: formulário de ocorrência.
+- `/(denunciante)/minhas-denuncias`: acompanhamento das próprias ocorrências.
+- `/(gestor)/dashboard`: painel do gestor.
+- `/(gestor)/denuncias-recentes`: consulta e atualização das ocorrências.
+- `/(gestor)/mapa-ocorrencias`: visualização geográfica.
+- `/(gestor)/gestores`: gestão de contas de gestor.
+
+Os caminhos internos com grupos entre parênteses são organizados pelo App Router; consulte os arquivos em `src/app/` para confirmar a rota pública efetiva.
+
+## API e documentação
+
+Com o backend local em execução:
+
+- API: `http://localhost:8000`
+- Swagger UI: `http://localhost:8000/api-docs`
+- Health check: `http://localhost:8000/health`
+
+A documentação OpenAPI de origem está em `backend/src/swagger.json`.
+
+## Observações
+
+- A interface não substitui autenticação e autorização no backend.
+- Para testar fluxos completos, use contas de desenvolvimento e dados não sensíveis.
+- Consulte o [README principal](../README.md), o [README do mobile](../mobile/README.md) e o [resumo de arquitetura e segurança](../RESUMO-ARQUITETURA-SEGURANCA.md).

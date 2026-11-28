@@ -1,16 +1,20 @@
-# Documentação mobile e integração
+# Documentação do aplicativo mobile
 
-Documentos ativos e históricos do aplicativo estão organizados por finalidade:
+Este diretório reúne a documentação específica do aplicativo mobile do S.O.S. Cidade.
 
 | Pasta | Conteúdo |
 |---|---|
-| [`seguranca/`](seguranca/) | Avaliação de segurança e LGPD do projeto; mantém o registro histórico entre branches e a revisão do checkout local. |
-| [`testes/`](testes/) | TAS mobile, backlog de cobertura e quality gate dos workflows. |
-| [`integracao/`](integracao/) | Comparação dos repositórios e orientações para integrar mudanças de Elly em Kayky, incluindo commits separados. |
-| [`entrega/`](entrega/) | [Acompanhamento acadêmico](entrega/ACOMPANHAMENTO.md) e evidências do aplicativo. |
-| [`backlog/`](backlog/) | Backlog de produto completo, mais extenso por natureza. |
-| [`referencias/`](referencias/) | Resumo curto de auditorias antigas; confirme o código antes de usar. |
+| [`seguranca/`](seguranca/) | Avaliação técnica de segurança, privacidade e limites conhecidos. |
+| [`testes/`](testes/) | Testes mobile, backlog de cobertura e quality gate dos workflows. |
+| [`entrega/`](entrega/) | Registros de acompanhamento e evidências históricas da entrega. |
+| [`backlog/`](backlog/) | Backlog de produto e histórias do aplicativo. |
+| [`referencias/`](referencias/) | Registros históricos de auditorias; valide sempre o código atual antes de usar essas informações como estado vigente. |
 
-O documento principal de execução e arquitetura do aplicativo continua em [`mobile/README.md`](../README.md). O resumo das relações entre frontend, backend, mobile e segurança está na raiz do repositório, em [`RESUMO-ARQUITETURA-SEGURANCA.md`](../../RESUMO-ARQUITETURA-SEGURANCA.md).
+## Documentos principais
 
-O antigo diretório `tests/mobile/` contém apenas um aviso que direciona para esta documentação canônica.
+- [Execução, configuração e build mobile](../README.md)
+- [Roteiro de gravação do screencast](../../docs/GRAVACAO-SCREENCAST.md)
+- [Resumo de arquitetura e segurança](../../RESUMO-ARQUITETURA-SEGURANCA.md)
+- [Testes mobile](testes/README.md)
+
+Os documentos históricos não substituem as instruções atuais de execução e não devem ser tratados como comprovação de que uma funcionalidade foi validada no dispositivo.

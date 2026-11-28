@@ -1,59 +1,55 @@
-# SOS-Cidade
+# S.O.S. Cidade
 
-Sistema de denúncias urbanas para Recife. Cidadãos registram ocorrências; gestores acompanham e atualizam os atendimentos.
+Sistema de registro e acompanhamento de denúncias urbanas, com foco em ocorrências de zeladoria na cidade do Recife. O cidadão registra uma ocorrência e pode acompanhar seu andamento; gestores consultam e atualizam os atendimentos conforme suas permissões.
 
-## Partes do projeto
+## Documentação por componente
 
-| Parte | Tecnologia | Para que serve |
+Comece pelo documento correspondente ao que deseja executar:
+
+| Componente | Documentação | Conteúdo |
 |---|---|---|
-| `mobile/` | Expo, React Native, TypeScript | App Android/iOS e execução web |
-| `frontend/` | Next.js, TypeScript | Site para cidadãos e gestores |
-| `backend/` | Express, Prisma, PostgreSQL | API, autenticação e regras de negócio |
-| `e2e/`, `tests/` | Playwright, Jest/Supertest | Testes web, API e contratos |
-| `ETL/` | Python | Importa dados históricos de clima |
+| Aplicativo mobile | [Mobile — instalação, execução e build](mobile/README.md) | Expo/React Native, permissões, API, testes e APK Android |
+| Aplicação web | [Frontend — instalação e execução](frontend/README.md) | Next.js, variáveis de ambiente, execução e build |
+| API e banco | [Backend — configuração](backend/README.md) | Express, Prisma, PostgreSQL, Redis e endpoints |
+| Demonstração | [Roteiro de screencast](docs/GRAVACAO-SCREENCAST.md) | Preparação, gravação e sequência sugerida para demonstrar o aplicativo |
+| Testes | [Testes E2E](e2e/README.md) e [gestão dos testes](docs/testes/gestao-testes.md) | Execução e interpretação das suítes disponíveis |
+| Arquitetura e segurança | [Resumo de arquitetura e segurança](RESUMO-ARQUITETURA-SEGURANCA.md) | Componentes, fluxo de dados e limites identificados na revisão estática |
 
-Mobile e site chamam a mesma API. O backend grava no PostgreSQL e usa Redis como cache. Veja o [resumo de arquitetura e segurança](RESUMO-ARQUITETURA-SEGURANCA.md).
+## Visão geral
 
-## Perfis
+| Parte | Tecnologia | Responsabilidade |
+|---|---|---|
+| `mobile/` | Expo, React Native, TypeScript e NativeWind | Aplicativo para Android/iOS |
+| `frontend/` | Next.js e TypeScript | Aplicação web para cidadãos e gestores |
+| `backend/` | Express, Prisma, PostgreSQL e Redis | API, autenticação, autorização e persistência |
+| `e2e/`, `tests/` | Playwright, Jest e Supertest | Testes web, API, contratos e lógica mobile |
+| `ETL/` | Python | Rotinas de extração e carga de dados auxiliares |
 
-- **Denunciante:** cria e acompanha as próprias denúncias.
-- **Gestor:** consulta ocorrências e atualiza seu atendimento.
+Mobile e frontend web consomem a API do próprio S.O.S. Cidade. A autorização efetiva deve ser aplicada no backend; esconder telas na interface não substitui as permissões da API.
 
-O backend aplica autenticação e permissões; a navegação por perfil no app/site não é a barreira de segurança. Uma denúncia anônima esconde o nome na resposta, mas mantém vínculo interno com a conta.
+## Execução local rápida
 
-## Executar localmente
+Requisitos: Docker Desktop, Node.js LTS e npm.
 
-Requisitos: Docker Desktop, Node.js e npm.
+Na raiz do repositório:
 
-```powershell
+```bash
 docker compose up --build -d
 ```
 
-Depois de iniciar: site em `http://localhost:3000`, API em `http://localhost:8000`, saúde em `/health`. O Compose usa credenciais e chaves fixas apenas para desenvolvimento; não as reutilize em produção.
+Endereços locais:
 
-Para executar o aplicativo, consulte [mobile/README.md](mobile/README.md). Ele explica Expo Go, endereço da API no celular e contas locais de teste.
+- Frontend web: `http://localhost:3000`
+- API: `http://localhost:8000`
+- Swagger: `http://localhost:8000/api-docs`
+- Health check: `http://localhost:8000/health`
 
-## Testes e workflows
+Para executar o aplicativo, siga [mobile/README.md](mobile/README.md). Para executar apenas o frontend, consulte [frontend/README.md](frontend/README.md). Para configuração de produção, use variáveis próprias do ambiente e nunca reutilize as credenciais fixas do `docker-compose.yml`.
 
-Na raiz: `npm run test:unit` executa unitários frontend, backend e mobile. Testes de API usam `npm run test:api`; smoke web usa `npm run test:e2e:smoke`.
+## Testes
 
-Todos os workflows em `.github/workflows/` têm execução manual em **Actions → Run workflow**. O de manutenção pede o número da issue. A integração mobile testa serviços HTTP contra backend real, não telas nativas.
+Os scripts de teste disponíveis estão descritos em [package.json](package.json), [docs/testes/gestao-testes.md](docs/testes/gestao-testes.md) e nos READMEs de cada componente. A execução de testes unitários ou de integração HTTP não comprova, por si só, que o aplicativo foi instalado e validado em um aparelho físico.
 
-## Segurança: limites importantes
+## Limites conhecidos
 
-- Senhas têm hash; autenticação e autorização ficam no backend.
-- Nome identificado e descrição são criptografados; imagens e outros dados não recebem a mesma proteção.
-- O token web também é gravado em cookie acessível a JavaScript.
-- O cache de denúncias mobile usa armazenamento local sem criptografia.
-- Neste checkout, o backend não bloqueia transições inválidas de situação enviadas diretamente à API.
-- Retenção de dados, atendimento a titulares e resposta a incidentes ainda precisam de definição.
-
-Não é possível afirmar conformidade completa com a LGPD ou prontidão para produção. Veja a [avaliação de segurança](mobile/docs/seguranca/seguranca-lgpd.md).
-
-## Documentação
-
-- [Índice dos documentos mobile](mobile/docs/README.md)
-- [Backlog de testes mobile](mobile/docs/testes/backlog-testes-mobile.md)
-- [Quality gate e execução manual](mobile/docs/testes/quality-gate.md)
-- [Resumo de arquitetura e segurança](RESUMO-ARQUITETURA-SEGURANCA.md)
-- [Testes E2E](e2e/README.md)
+A documentação técnica registra limitações encontradas no código desta cópia, inclusive sobre armazenamento local, notificações, proteção de dados e regras de transição de situação. Não interprete configuração de build, dependências instaladas ou testes automatizados como prova de publicação ou homologação. Consulte [RESUMO-ARQUITETURA-SEGURANCA.md](RESUMO-ARQUITETURA-SEGURANCA.md) e [mobile/docs/seguranca/seguranca-lgpd.md](mobile/docs/seguranca/seguranca-lgpd.md).
